@@ -1,5 +1,6 @@
 import torch.nn as nn
-from utils.utils import ActNorm
+
+from utils.nn_modules import ActNorm
 
 
 def weights_init(m):
@@ -14,8 +15,9 @@ def weights_init(m):
 
 class NLayerDiscriminator(nn.Module):
     """Defines a PatchGAN discriminator as in Pix2Pix
-        --> see https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/models/networks.py
+    --> see https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/models/networks.py
     """
+
     def __init__(self, input_nc=3, ndf=64, n_layers=3, use_actnorm=False):
         """Construct a PatchGAN discriminator
         Parameters:
@@ -31,13 +33,22 @@ class NLayerDiscriminator(nn.Module):
         layers = []
         in_channels = input_nc
         for i in range(n_layers + 2):
-            out_channels = min(ndf * (2 ** i), ndf * 8)
+            out_channels = min(ndf * (2**i), ndf * 8)
             stride = 1 if i == n_layers + 1 else 2
-            layers.extend([
-                nn.Conv2d(in_channels, out_channels, kernel_size=4, stride=stride, padding=1, bias=use_bias),
-                norm_layer(out_channels) if i > 0 else nn.Identity(),
-                nn.LeakyReLU(0.2, True) if i < n_layers + 1 else nn.Identity()
-            ])
+            layers.extend(
+                [
+                    nn.Conv2d(
+                        in_channels,
+                        out_channels,
+                        kernel_size=4,
+                        stride=stride,
+                        padding=1,
+                        bias=use_bias,
+                    ),
+                    norm_layer(out_channels) if i > 0 else nn.Identity(),
+                    nn.LeakyReLU(0.2, True) if i < n_layers + 1 else nn.Identity(),
+                ]
+            )
             in_channels = out_channels
 
         layers.append(nn.Conv2d(in_channels, 1, kernel_size=4, stride=1, padding=1))
