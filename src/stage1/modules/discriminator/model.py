@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from utils.nn_modules import ActNorm
+from src.utils.nn_modules import ActNorm
 
 
 def weights_init(m):
