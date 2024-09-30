@@ -113,3 +113,51 @@ class TestTripleGrainDynamicEntropyRouter(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# import unittest
+# import torch
+# from modules.dynamic_modules.RouterDual import *
+# from modules.dynamic_modules.RouterTriple import *
+
+
+# PATH = "D:\\AwesomeCV\\DynamicVectorQuantization\\scripts\\tools\\thresholds\\entropy_thresholds_imagenet_train_patch-16.json"
+
+
+# class TestDualGrainFeatureRouter(unittest.TestCase):
+#     def setUp(self):
+#         self.router = DualGrainFeatureRouter(num_channels=4, gate_type='2layer-fc-SiLu', )
+
+#     def test_forward(self):
+#         h_coarse = torch.randn(1, 4, 8, 8)
+#         h_fine = torch.randn(1, 4, 4, 4)
+#         output = self.router.forward(h_coarse, h_fine)
+#         print("TestDualGrainFeatureRouter", output.shape)
+
+
+# class TestDualGrainFixedEntropyRouter(unittest.TestCase):
+#     def setUp(self):
+#         self.router = DualGrainFixedEntropyRouter(json_path=PATH, fine_grain_ratito=0.5)
+
+#     def test_forward(self):
+#         h_coarse = torch.randn(1, 4, 8, 8)
+#         h_fine = torch.randn(1, 4, 8, 8)
+#         entropy = torch.tensor([0.1, 0.5, 0.9])
+#         gate = self.router.forward(h_coarse, h_fine, entropy)
+#         print("TestDualGrainFixedEntropyRouter", gate.shape)
+
+
+# class TestTripleGrainFeatureRouter(unittest.TestCase):
+#     def setUp(self):
+#         self.router = TripleGrainFeatureRouter(normalization_type='none', gate_type='2layer-fc-ReLu', num_channels=16)
+
+#     def test_forward(self):
+#         h_fine = torch.randn(1, 16, 32, 32)
+#         h_median = torch.randn(1, 16, 16, 16)
+#         h_coarse = torch.randn(1, 16, 8, 8)
+#         output = self.router(h_fine, h_median, h_coarse)
+#         print("TestTripleGrainFeatureRouter", output.shape)
+
+
+# if __name__ == "__main__":
+#     unittest.main()

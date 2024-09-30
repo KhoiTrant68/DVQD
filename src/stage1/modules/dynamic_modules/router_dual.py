@@ -32,11 +32,8 @@ class DualGrainFeatureRouter(nn.Module):
             norm(h) for norm, h in zip(self.feature_norm, [h_coarse, h_fine])
         ]
 
-        print(h_coarse.shape, h_fine.shape)
-        avg_h_fine = self.gate_pool(h_fine)
-        print(avg_h_fine.shape)
-        h_logistic = torch.cat([h_coarse, avg_h_fine], dim=1).permute(0, 2, 3, 1)
-        print(h_logistic.shape)
+        avg_h_fine = self.gate_pool(h_coarse)
+        h_logistic = torch.cat([h_fine, avg_h_fine], dim=1).permute(0, 2, 3, 1)
         gate = self.gate(h_logistic)
         return gate
 

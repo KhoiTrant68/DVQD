@@ -1,6 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
+
 :: Remove all __pycache__ directories
 for /d /r %%d in (__pycache__) do (
     if exist "%%d" (
@@ -8,6 +9,21 @@ for /d /r %%d in (__pycache__) do (
         rmdir /s /q "%%d"
     )
 )
+
+for /d /r %%d in (.pytest_cache) do (
+    if exist "%%d" (
+        echo Removing directory: %%d
+        rmdir /s /q "%%d"
+    )
+)
+
+for /d /r %%d in (.vscode) do (
+    if exist "%%d" (
+        echo Removing directory: %%d
+        rmdir /s /q "%%d"
+    )
+)
+
 
 :: Collect all Python files
 set "PYPATH="
