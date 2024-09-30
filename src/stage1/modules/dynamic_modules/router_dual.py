@@ -1,5 +1,5 @@
 import json
-
+from abc import abstractmethod
 import numpy as np
 import torch
 import torch.nn as nn
@@ -31,6 +31,7 @@ class DualGrainFeatureRouter(nn.Module):
         h_fine = self.feature_norm_fine(h_fine)
         avg_h_fine = self.gate_pool(h_fine)
         h_logistic = torch.cat([h_coarse, avg_h_fine], dim=1).permute(0, 2, 3, 1)
+
         gate = self.gate(h_logistic)
         return gate
 
@@ -44,17 +45,19 @@ class DualGrainEntropyRouter(nn.Module):
         gate_coarse = (entropy <= threshold).bool().long().unsqueeze(-1)
         gate = torch.cat([gate_coarse, gate_fine], dim=-1)
         return gate
+    
 
 
 class DualGrainFixedEntropyRouter(DualGrainEntropyRouter):
     def __init__(self, json_path, fine_grain_ratito):
+        super().__init__()
         with open(json_path, "r", encoding="utf-8") as f:
             content = json.load(f)
         self.fine_grain_threshold = content[
             "{}".format(str(int(100 - fine_grain_ratito * 100)))
         ]
 
-    def forward(self, entropy):
+    def forward(self, h_coarse, h_fine, entropy):
         gate = self._get_gate_from_threshold(entropy, self.fine_grain_threshold)
         return gate
 
@@ -65,7 +68,7 @@ class DualGrainDynamicEntropyRouter(DualGrainEntropyRouter):
         self.fine_grain_ratito_min = fine_grain_ratito_min
         self.fine_grain_ratito_max = fine_grain_ratito_max
 
-    def forward(self, entropy=None):
+    def forward(self, h_coarse, h_fine, entropy=None):
         fine_grain_threshold = np.random.uniform(
             low=self.fine_grain_ratito_min, high=self.fine_grain_ratito_max
         )

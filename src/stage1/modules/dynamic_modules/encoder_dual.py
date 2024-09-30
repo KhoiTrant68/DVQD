@@ -129,7 +129,7 @@ class DualGrainEncoder(nn.Module):
         h_fine = None
         for i_level in range(self.num_resolutions):
             for i_block in range(self.num_res_blocks):
-                h = self.down[i_level].block[i_block](hs[-1], None)
+                h = self.down[i_level].block[i_block](hs[-1])
                 if self.down[i_level].attn:
                     h = self.down[i_level].attn[i_block](h)
                 hs.append(h)
@@ -154,6 +154,7 @@ class DualGrainEncoder(nn.Module):
     def _dynamic_routing(self, h_coarse, h_fine, x_entropy):
         gate = self.router(h_fine=h_fine, h_coarse=h_coarse, entropy=x_entropy)
         if self.update_router:
+            gate = gate.float()
             gate = F.gumbel_softmax(gate, dim=-1, hard=True)
         gate = gate.permute(0, 3, 1, 2)
         indices = gate.argmax(dim=1)
