@@ -1,5 +1,6 @@
 import json
 from abc import abstractmethod
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,7 +22,12 @@ class DualGrainFeatureRouter(nn.Module):
                 (
                     nn.Identity()
                     if num_groups is None
-                    else nn.GroupNorm(num_groups, num_channels, eps=1e-6, affine=True)
+                    else nn.GroupNorm(
+                        num_groups=num_groups,
+                        num_channels=num_channels,
+                        eps=1e-6,
+                        affine=True,
+                    )
                 )
                 for _ in range(2)
             ]
@@ -31,9 +37,8 @@ class DualGrainFeatureRouter(nn.Module):
         h_coarse, h_fine = [
             norm(h) for norm, h in zip(self.feature_norm, [h_coarse, h_fine])
         ]
-
-        avg_h_fine = self.gate_pool(h_coarse)
-        h_logistic = torch.cat([h_fine, avg_h_fine], dim=1).permute(0, 2, 3, 1)
+        avg_h_fine = self.gate_pool(h_fine)
+        h_logistic = torch.cat([h_coarse, avg_h_fine], dim=1).permute(0, 2, 3, 1)
         gate = self.gate(h_logistic)
         return gate
 
@@ -47,7 +52,6 @@ class DualGrainEntropyRouter(nn.Module):
         gate_coarse = (entropy <= threshold).unsqueeze(-1)
         gate = torch.cat([gate_coarse, gate_fine], dim=-1)
         return gate
-    
 
 
 class DualGrainFixedEntropyRouter(DualGrainEntropyRouter):
@@ -63,14 +67,14 @@ class DualGrainFixedEntropyRouter(DualGrainEntropyRouter):
 
 
 class DualGrainDynamicEntropyRouter(DualGrainEntropyRouter):
-    def __init__(self, fine_grain_ratito_min=0.01, fine_grain_ratito_max=0.99):
+    def __init__(self, fine_grain_ratio_min=0.01, fine_grain_ratio_max=0.99):
         super().__init__()
-        self.fine_grain_ratito_min = fine_grain_ratito_min
-        self.fine_grain_ratito_max = fine_grain_ratito_max
+        self.fine_grain_ratio_min = fine_grain_ratio_min
+        self.fine_grain_ratio_max = fine_grain_ratio_max
 
     def forward(self, h_coarse, h_fine, entropy=None):
         fine_grain_threshold = np.random.uniform(
-            low=self.fine_grain_ratito_min, high=self.fine_grain_ratito_max
+            low=self.fine_grain_ratio_min, high=self.fine_grain_ratio_max
         )
         gate = self._get_gate_from_threshold(entropy, fine_grain_threshold)
         return gate

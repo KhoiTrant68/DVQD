@@ -2,8 +2,8 @@ import unittest
 
 import torch
 
-from stage1.modules.dynamic_modules.router_dual import *
-from stage1.modules.dynamic_modules.router_triple import *
+from src.stage1.modules.dynamic_modules.router_dual import *
+from src.stage1.modules.dynamic_modules.router_triple import *
 
 PATH = "D:\\AwesomeCV\\DynamicVectorQuantization\\scripts\\tools\\thresholds\\entropy_thresholds_imagenet_train_patch-16.json"
 
@@ -45,7 +45,7 @@ class TestDualGrainFixedEntropyRouter(unittest.TestCase):
 class TestDualGrainDynamicEntropyRouter(unittest.TestCase):
     def setUp(self):
         self.router = DualGrainDynamicEntropyRouter(
-            fine_grain_ratito_min=0.01, fine_grain_ratito_max=0.99
+            fine_grain_ratio_min=0.01, fine_grain_ratito_max=0.99
         )
 
     def test_forward(self):
@@ -62,10 +62,10 @@ class TestTripleGrainFeatureRouter(unittest.TestCase):
         self.router = TripleGrainFeatureRouter(num_channels=16)
 
     def test_forward(self):
-        h_fine = torch.randn(1, 16, 32, 32)
+        h_coarse = torch.randn(1, 16, 32, 32)
         h_median = torch.randn(1, 16, 16, 16)
-        h_coarse = torch.randn(1, 16, 8, 8)
-        output = self.router(h_fine, h_median, h_coarse)
+        h_fine = torch.randn(1, 16, 8, 8)
+        output = self.router(h_coarse, h_median, h_fine)
         print("TestTripleGrainFeatureRouter", output.shape)
 
 

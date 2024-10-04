@@ -43,7 +43,6 @@ class ResnetBlock(nn.Module):
         out_channels=None,
         conv_shortcut=False,
         dropout=0.2,
-        temb_channels=512,
     ):
         super().__init__()
         out_channels = out_channels or in_channels
@@ -53,9 +52,7 @@ class ResnetBlock(nn.Module):
         self.conv1 = nn.Conv2d(
             in_channels, out_channels, kernel_size=3, stride=1, padding=1
         )
-        self.temb_proj = (
-            nn.Linear(temb_channels, out_channels) if temb_channels > 0 else None
-        )
+
         self.norm2 = group_norm(out_channels)
         self.dropout = nn.Dropout(dropout)
         self.conv2 = nn.Conv2d(

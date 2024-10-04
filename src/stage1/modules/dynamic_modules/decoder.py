@@ -192,5 +192,3 @@ class Decoder(nn.Module):
         h = self.conv_out(h)
 
         return h
-
-

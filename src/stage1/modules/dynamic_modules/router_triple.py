@@ -18,7 +18,7 @@ class TripleGrainFeatureRouter(nn.Module):
 
         self.gate = nn.Sequential(
             nn.Linear(num_channels * self.num_splits, num_channels * self.num_splits),
-            nn.ReLU(inplace=True),
+            nn.SiLU(inplace=True),
             nn.Linear(num_channels * self.num_splits, self.num_splits),
         )
 
@@ -33,14 +33,14 @@ class TripleGrainFeatureRouter(nn.Module):
             ]
         )
 
-    def forward(self, h_fine, h_median, h_coarse, entropy=None):
-        h_fine, h_median, h_coarse = [
-            norm(h) for norm, h in zip(self.feature_norm, [h_fine, h_median, h_coarse])
+    def forward(self, h_coarse, h_median, h_fine, entropy=None):
+        h_coarse, h_median, h_fine = [
+            norm(h) for norm, h in zip(self.feature_norm, [h_coarse, h_median, h_fine])
         ]
-        avg_h_fine = self.gate_fine_pool(h_fine)
+        avg_h_coarse = self.gate_fine_pool(h_coarse)
         avg_h_median = self.gate_median_pool(h_median)
 
-        h_logistic = torch.cat([h_coarse, avg_h_median, avg_h_fine], dim=1).permute(
+        h_logistic = torch.cat([h_fine, avg_h_median, avg_h_coarse], dim=1).permute(
             0, 2, 3, 1
         )
         gate = self.gate(h_logistic)
@@ -76,15 +76,15 @@ class TripleGrainFixedEntropyRouter(TripleGrainEntropyRouter):
 
 
 class TripleGrainDynamicEntropyRouter(TripleGrainEntropyRouter):
-    def __init__(self, fine_grain_ratito_min=0.01, fine_grain_ratito_max=0.99):
+    def __init__(self, fine_grain_ratio_min=0.01, fine_grain_ratio_max=0.99):
         super().__init__()
-        self.fine_grain_ratito_min = fine_grain_ratito_min
-        self.fine_grain_ratito_max = fine_grain_ratito_max
+        self.fine_grain_ratio_min = fine_grain_ratio_min
+        self.fine_grain_ratio_max = fine_grain_ratio_max
 
     def forward(self, h_coarse, h_median, h_fine, entropy=None):
         median_grain_threshold, fine_grain_threshold = np.random.uniform(
-            low=[self.fine_grain_ratito_min, self.fine_grain_ratito_max / 2],
-            high=[self.fine_grain_ratito_max / 2, self.fine_grain_ratito_max],
+            low=[self.fine_grain_ratio_min, self.fine_grain_ratio_max / 2],
+            high=[self.fine_grain_ratio_max / 2, self.fine_grain_ratio_max],
         )
         gate = self._get_gate_from_threshold(
             entropy, median_grain_threshold, fine_grain_threshold

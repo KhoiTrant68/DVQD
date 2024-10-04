@@ -44,8 +44,6 @@
 #     test_Decoder()
 
 
-
-
 # import torch
 # from src.stage1.modules.dynamic_modules.router_dual import (
 #     DualGrainFeatureRouter,
@@ -88,8 +86,8 @@
 #     test_get_gate_from_threshold()
 
 
-
 import torch
+
 from src.stage1.modules.dynamic_modules.encoder_dual import DualGrainEncoder
 
 # Define the configuration as per the provided YAML
@@ -114,22 +112,22 @@ from src.stage1.modules.dynamic_modules.encoder_dual import DualGrainEncoder
 
 
 config = {
-    'ch': 128,
-    'ch_mult': [1, 1, 2, 2, 4],
-    'num_res_blocks': 2,
-    'attn_resolutions': [16, 32],
-    'dropout': 0.0,
-    'resamp_with_conv': True,
-    'in_channels': 3,
-    'resolution': 256,
-    'z_channels': 256,
-    'router_config': {
-        'target': 'src.stage1.modules.dynamic_modules.router_dual.DualGrainFixedEntropyRouter',
-        'params': {   
-            'json_path': 'D:\\AwesomeCV\\DynamicVectorQuantization\\scripts\\tools\\thresholds\\entropy_thresholds_imagenet_train_patch-16.json',
-            'fine_grain_ratito': 0.5
-        }
-    }
+    "ch": 128,
+    "ch_mult": [1, 1, 2, 2, 4],
+    "num_res_blocks": 2,
+    "attn_resolutions": [16, 32],
+    "dropout": 0.0,
+    "resamp_with_conv": True,
+    "in_channels": 3,
+    "resolution": 256,
+    "z_channels": 256,
+    "router_config": {
+        "target": "src.stage1.modules.dynamic_modules.router_dual.DualGrainFixedEntropyRouter",
+        "params": {
+            "json_path": "D:\\AwesomeCV\\DynamicVectorQuantization\\scripts\\tools\\thresholds\\entropy_thresholds_imagenet_train_patch-16.json",
+            "fine_grain_ratito": 0.5,
+        },
+    },
 }
 
 
@@ -144,7 +142,7 @@ x_entropy = torch.randn(1, 1, 256, 256)  # Sample entropy tensor
 output = encoder(x, x_entropy)
 
 # Print the outputs
-print("h_dual:", output['h_dual'].shape)
-print("indices:", output['indices'].shape)
-print("codebook_mask:", output['codebook_mask'].shape)
-print("gate:", output['gate'].shape)
+print("h_dual:", output["h_dual"].shape)
+print("indices:", output["indices"].shape)
+print("codebook_mask:", output["codebook_mask"].shape)
+print("gate:", output["gate"].shape)

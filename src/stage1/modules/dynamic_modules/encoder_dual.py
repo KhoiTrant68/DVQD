@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from src.utils.nn_modules import AttnBlock, Downsample, ResnetBlock, group_norm
-from src.utils.utils_modules import instantiate_from_config
+from src.utils.util_modules import instantiate_from_config
 
 
 class DualGrainEncoder(nn.Module):
@@ -26,23 +26,22 @@ class DualGrainEncoder(nn.Module):
         super().__init__()
 
         self.ch = ch
-        self.temb_ch = 0
         self.num_resolutions = len(ch_mult)
         self.num_res_blocks = num_res_blocks
         self.resolution = resolution
         self.in_channels = in_channels
 
-        # downsampling
+        # Downsampling
         self.conv_in = nn.Conv2d(
             in_channels, self.ch, kernel_size=3, stride=1, padding=1
         )
 
         curr_res = resolution
         in_ch_mult = (1,) + tuple(ch_mult)
-        self.down = nn.ModuleList()
+        self.down = nn.Sequential()
         for i_level in range(self.num_resolutions):
-            block = nn.ModuleList()
-            attn = nn.ModuleList()
+            block = nn.Sequential()
+            attn = nn.Sequential()
             block_in = ch * in_ch_mult[i_level]
             block_out = ch * ch_mult[i_level]
             for _ in range(self.num_res_blocks):
@@ -50,7 +49,6 @@ class DualGrainEncoder(nn.Module):
                     ResnetBlock(
                         in_channels=block_in,
                         out_channels=block_out,
-                        temb_channels=self.temb_ch,
                         dropout=dropout,
                     )
                 )
@@ -70,14 +68,12 @@ class DualGrainEncoder(nn.Module):
             ResnetBlock(
                 in_channels=block_in,
                 out_channels=block_in,
-                temb_channels=self.temb_ch,
                 dropout=dropout,
             ),
             AttnBlock(block_in),
             ResnetBlock(
                 in_channels=block_in,
                 out_channels=block_in,
-                temb_channels=self.temb_ch,
                 dropout=dropout,
             ),
         )
@@ -92,14 +88,12 @@ class DualGrainEncoder(nn.Module):
             ResnetBlock(
                 in_channels=block_in_finegrain,
                 out_channels=block_in_finegrain,
-                temb_channels=self.temb_ch,
                 dropout=dropout,
             ),
             AttnBlock(block_in_finegrain),
             ResnetBlock(
                 in_channels=block_in_finegrain,
                 out_channels=block_in_finegrain,
-                temb_channels=self.temb_ch,
                 dropout=dropout,
             ),
         )
@@ -108,7 +102,9 @@ class DualGrainEncoder(nn.Module):
             block_in_finegrain, z_channels, kernel_size=3, stride=1, padding=1
         )
 
-        self.router = instantiate_from_config(router_config)
+        # self.router = instantiate_from_config(router_config)
+        self.router = router_config
+
         self.update_router = update_router
 
     def forward(self, x, x_entropy):
@@ -121,7 +117,6 @@ class DualGrainEncoder(nn.Module):
 
         h_coarse = self._process_coarse(h_coarse)
         h_fine = self._process_fine(h_fine)
-
         return self._dynamic_routing(h_coarse, h_fine, x_entropy)
 
     def _downsample(self, x):
@@ -154,11 +149,11 @@ class DualGrainEncoder(nn.Module):
     def _dynamic_routing(self, h_coarse, h_fine, x_entropy):
         gate = self.router(h_fine=h_fine, h_coarse=h_coarse, entropy=x_entropy)
         if self.update_router:
-            gate = gate.float()
             gate = F.gumbel_softmax(gate, dim=-1, hard=True)
-        gate = gate.permute(0, 3, 1, 2)
-        indices = gate.argmax(dim=1)
 
+        gate = gate.permute(0, 3, 1, 2)
+
+        indices = gate.argmax(dim=1)
         h_coarse = h_coarse.repeat_interleave(2, dim=-1).repeat_interleave(2, dim=-2)
         indices_repeat = (
             indices.repeat_interleave(2, dim=-1)
