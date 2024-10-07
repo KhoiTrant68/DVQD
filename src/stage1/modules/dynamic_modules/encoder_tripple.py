@@ -2,213 +2,144 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.utils.nn_modules import AttnBlock, Downsample, ResnetBlock, group_norm
+from src.utils.nn_modules import AttnBlock, Downsample, group_norm, ResnetBlock
 from src.utils.util_modules import instantiate_from_config
 
 
 class TripleGrainEncoder(nn.Module):
-    """
-    Triple Grain Encoder for processing input images at different resolutions.
-    """
-
     def __init__(
         self,
         *,
-        ch: int,
-        ch_mult: tuple = (1, 2, 4, 8),
-        num_res_blocks: int,
-        attn_resolutions: list,
-        dropout: float = 0.0,
-        resamp_with_conv: bool = True,
-        in_channels: int,
-        resolution: int,
-        z_channels: int,
-        router_config: dict = None,
+        ch,
+        ch_mult=(1, 2, 4, 8),
+        num_res_blocks,
+        attn_resolutions,
+        dropout=0.0,
+        resamp_with_conv=True,
+        in_channels,
+        resolution,
+        z_channels,
+        router_config=None,
+        update_router=True,
         **ignore_kwargs,
     ):
         super().__init__()
 
         self.ch = ch
         self.num_resolutions = len(ch_mult)
+        self.num_res_blocks = num_res_blocks
         self.resolution = resolution
         self.in_channels = in_channels
-        self.z_channels = z_channels
+        self.update_router = update_router
 
-        # Downsampling layers
-        self.conv_in = nn.Conv2d(in_channels, ch, kernel_size=3, stride=1, padding=1)
-        self.down = self._build_downsampling_layers(
-            ch, ch_mult, num_res_blocks, attn_resolutions, dropout, resamp_with_conv
-        )
+        self.conv_in = nn.Conv2d(in_channels, self.ch, kernel_size=3, stride=1, padding=1)
 
-        # Mid-grain processing layers
-        self.mid_blocks, self.norm_out, self.conv_out = self._build_mid_grain_layers(
-            ch, ch_mult, dropout
-        )
-
-        # Router for combining outputs
-        self.router = instantiate_from_config(router_config)
-
-    def _build_downsampling_layers(
-        self,
-        ch: int,
-        ch_mult: tuple,
-        num_res_blocks: int,
-        attn_resolutions: list,
-        dropout: float,
-        resamp_with_conv: bool,
-    ):
-        """
-        Build downsampling layers for the encoder.
-        """
-        down_layers = nn.ModuleList()
-        curr_res = self.resolution
-        in_ch_mult = [
-            1,
-        ] + ch_mult
-
+        curr_res = resolution
+        in_ch_mult = (1,) + tuple(ch_mult)
+        self.down = nn.Sequential()
         for i_level in range(self.num_resolutions):
-            block = nn.ModuleList()
-            attn = nn.ModuleList()
+            block = nn.Sequential()
+            attn = nn.Sequential()
             block_in = ch * in_ch_mult[i_level]
             block_out = ch * ch_mult[i_level]
-
-            for _ in range(num_res_blocks):
-                block.append(
-                    ResnetBlock(
-                        in_channels=block_in, out_channels=block_out, dropout=dropout
-                    )
-                )
+            for _ in range(self.num_res_blocks):
+                block.append(ResnetBlock(in_channels=block_in, out_channels=block_out, dropout=dropout))
                 block_in = block_out
                 if curr_res in attn_resolutions:
                     attn.append(AttnBlock(block_in))
-
             down = nn.Module()
             down.block = block
             down.attn = attn
             if i_level != self.num_resolutions - 1:
                 down.downsample = Downsample(block_in, resamp_with_conv)
                 curr_res //= 2
-            down_layers.append(down)
+            self.down.append(down)
 
-        return down_layers
-
-    def _build_mid_grain_layers(self, ch: int, ch_mult: tuple, dropout: float):
-        """
-        Build mid-grain processing layers for the encoder.
-        """
-        mid_blocks = nn.ModuleList()
-        norm_out = nn.ModuleList()
-        conv_out = nn.ModuleList()
-
-        for i in range(3):
-            block_in = ch * ch_mult[-(i + 1)]
-            mid_blocks.append(
-                nn.ModuleList(
-                    [
-                        ResnetBlock(
-                            in_channels=block_in, out_channels=block_in, dropout=dropout
-                        ),
-                        AttnBlock(block_in),
-                        ResnetBlock(
-                            in_channels=block_in, out_channels=block_in, dropout=dropout
-                        ),
-                    ]
-                )
+        def _make_grain_branch(block_in):
+            branch = nn.Sequential(
+                ResnetBlock(in_channels=block_in, out_channels=block_in,  dropout=dropout),
+                AttnBlock(block_in),
+                ResnetBlock(in_channels=block_in, out_channels=block_in,  dropout=dropout),
+                group_norm(block_in),
+                nn.SiLU(),
+                nn.Conv2d(block_in, z_channels, kernel_size=3, stride=1, padding=1)
             )
-            norm_out.append(group_norm(block_in))
-            conv_out.append(
-                nn.Conv2d(block_in, self.z_channels, kernel_size=3, stride=1, padding=1)
-            )
+            return branch
 
-        return mid_blocks, norm_out, conv_out
+        self.coarse_branch = _make_grain_branch(block_in)
+        block_in_median = block_in // (ch_mult[-1] // ch_mult[-2])
+        self.median_branch = _make_grain_branch(block_in_median)
+        block_in_fine = block_in_median // (ch_mult[-2] // ch_mult[-3])
+        self.fine_branch = _make_grain_branch(block_in_fine)
 
-    def forward(self, x: torch.Tensor, x_entropy: torch.Tensor = None) -> dict:
-        """
-        Forward pass through the encoder.
-        """
-        assert (
-            x.shape[2] == x.shape[3] == self.resolution
-        ), f"Input resolution mismatch: {x.shape[2]}, {x.shape[3]} != {self.resolution}"
+        # self.router = instantiate_from_config(router_config)
+        self.router = router_config
 
-        # Downsampling
+
+    def forward(self, x, x_entropy):
+        assert x.shape[2] == x.shape[3] == self.resolution
+
+        hs, h_fine, h_median = self._downsample(x)
+        h_coarse = hs[-1]
+        
+        h_coarse = self.coarse_branch(h_coarse)
+        h_median = self.median_branch(h_median)
+        h_fine = self.fine_branch(h_fine)
+
+        return self._dynamic_routing(h_coarse, h_median, h_fine, x_entropy)
+
+
+    def _downsample(self, x):
         hs = [self.conv_in(x)]
+        h_fine = None
+        h_median = None
         for i_level in range(self.num_resolutions):
-            for block in self.down[i_level].block:
-                h = block(hs[-1])
+            for i_block in range(self.num_res_blocks):
+                h = self.down[i_level].block[i_block](hs[-1])
                 if self.down[i_level].attn:
-                    h = self.down[i_level].attn[0](h)
+                    h = self.down[i_level].attn[i_block](h)
                 hs.append(h)
             if i_level != self.num_resolutions - 1:
                 hs.append(self.down[i_level].downsample(hs[-1]))
+            if i_level == self.num_resolutions - 2:
+                h_median = h
+            elif i_level == self.num_resolutions - 3:
+                h_fine = h
+        return hs, h_fine, h_median
 
-        h_coarse, h_median, h_fine = hs[-3], hs[-2], hs[-1]
-
-        # Process mid-grain blocks
-        h_outputs = [
-            self._process_mid_block(
-                h, self.mid_blocks[i], self.norm_out[i], self.conv_out[i]
-            )
-            for i, h in enumerate([h_coarse, h_median, h_fine])
-        ]
-
-        # Router and gate processing
-        gate = self.router(
-            h_fine=h_outputs[2],
-            h_median=h_outputs[1],
-            h_coarse=h_outputs[0],
-            entropy=x_entropy,
-        )
-        if self.training:
+    def _dynamic_routing(self, h_coarse, h_median, h_fine, x_entropy):
+        gate = self.router(h_fine=h_fine, h_median=h_median, h_coarse=h_coarse, entropy=x_entropy)
+        if self.update_router and self.training:
             gate = F.gumbel_softmax(gate, tau=1, dim=-1, hard=True)
 
-        indices = gate.argmax(dim=1).unsqueeze(1)
-        h_triple = self._combine_outputs(h_outputs, indices)
+        gate = gate.permute(0, 3, 1, 2)
+        indices = gate.argmax(dim=1)
 
-        if self.training:
-            gate_grad = (
-                gate.max(dim=1, keepdim=True)[0]
-                .repeat_interleave(4, dim=-1)
-                .repeat_interleave(4, dim=-2)
-            )
-            h_triple *= gate_grad
+        h_coarse = h_coarse.repeat_interleave(4, dim=-1).repeat_interleave(4, dim=-2)
+        h_median = h_median.repeat_interleave(2, dim=-1).repeat_interleave(2, dim=-2)
+        indices_repeat = indices.repeat_interleave(4, dim=-1).repeat_interleave(4, dim=-2).unsqueeze(1)
 
-        # Masks
-        codebook_mask = self._create_codebook_mask(indices)
+        h_triple = torch.where(indices_repeat == 0, h_coarse, h_median)
+        h_triple = torch.where(indices_repeat == 1, h_median, h_triple)
+        h_triple = torch.where(indices_repeat == 2, h_fine, h_triple)
+
+
+        if self.update_router and self.training:
+            gate_grad = gate.max(dim=1, keepdim=True)[0]
+            gate_grad = gate_grad.repeat_interleave(4, dim=-1).repeat_interleave(4, dim=-2)
+            h_triple = h_triple * gate_grad
+
+
+        coarse_mask = 0.0625 * torch.ones_like(indices_repeat, device = h_triple.device)
+        median_mask = 0.25 * torch.ones_like(indices_repeat, device = h_triple.device)
+        fine_mask = 1.0 * torch.ones_like(indices_repeat, device = h_triple.device)
+        codebook_mask = torch.where(indices_repeat == 0, coarse_mask, median_mask)
+        codebook_mask = torch.where(indices_repeat == 1, median_mask, codebook_mask)
+        codebook_mask = torch.where(indices_repeat == 2, fine_mask, codebook_mask)
 
         return {
             "h_triple": h_triple,
-            "indices": indices.squeeze(1),
+            "indices": indices,
             "codebook_mask": codebook_mask,
             "gate": gate,
         }
-
-    def _process_mid_block(
-        self,
-        h: torch.Tensor,
-        mid_block: nn.ModuleList,
-        norm: nn.Module,
-        conv: nn.Module,
-    ) -> torch.Tensor:
-        """
-        Process a mid-grain block.
-        """
-        for block in mid_block:
-            h = block(h)
-        h = norm(h)
-        return F.relu(conv(h))
-
-    def _combine_outputs(self, h_outputs: list, indices: torch.Tensor) -> torch.Tensor:
-        """
-        Combine outputs based on indices.
-        """
-        h_triple = torch.where(indices == 0, h_outputs[0], h_outputs[1])
-        h_triple = torch.where(indices == 1, h_outputs[1], h_triple)
-        return torch.where(indices == 2, h_outputs[2], h_triple)
-
-    def _create_codebook_mask(self, indices: torch.Tensor) -> torch.Tensor:
-        """
-        Create a codebook mask based on indices.
-        """
-        masks = torch.tensor([0.0625, 0.25, 1.0], device=indices.device)
-        codebook_mask = masks[indices]
-        return codebook_mask

@@ -3,8 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def group_norm(num_channels):
-    return nn.GroupNorm(num_groups=32, num_channels=num_channels, eps=1e-6, affine=True)
+def group_norm(num_channels, num_groups=32):
+    return nn.GroupNorm(
+        num_channels=num_channels, num_groups=num_groups, eps=1e-6, affine=True
+    )
 
 
 class Upsample(nn.Module):

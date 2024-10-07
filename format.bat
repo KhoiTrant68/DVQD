@@ -1,29 +1,16 @@
 @echo off
 setlocal enabledelayedexpansion
 
+:: Define the directories to remove
+set "dirs=__pycache__ .pytest_cache .vscode"
 
-:: Remove all __pycache__ directories
-for /d /r %%d in (__pycache__) do (
-    if exist "%%d" (
-        echo Removing directory: %%d
-        rmdir /s /q "%%d"
+:: Loop over and remove the directories
+for %%d in (%dirs%) do (
+    for /d /r %%f in (%%d) do (
+        echo Removing directory: %%f
+        rmdir /s /q "%%f"
     )
 )
-
-for /d /r %%d in (.pytest_cache) do (
-    if exist "%%d" (
-        echo Removing directory: %%d
-        rmdir /s /q "%%d"
-    )
-)
-
-for /d /r %%d in (.vscode) do (
-    if exist "%%d" (
-        echo Removing directory: %%d
-        rmdir /s /q "%%d"
-    )
-)
-
 
 :: Collect all Python files
 set "PYPATH="
@@ -37,10 +24,7 @@ if not defined PYPATH (
     goto :EOF
 )
 
-:: Run Black to format the code
-python -m black %PYPATH% 
-
-:: Run isort to sort imports
-python -m isort %PYPATH%
+:: Run Black to format the code and isort to sort imports
+python -m black %PYPATH% && python -m isort %PYPATH%
 
 endlocal
