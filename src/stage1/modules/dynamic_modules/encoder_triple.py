@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.utils.nn_modules import AttnBlock, Downsample, group_norm, ResnetBlock
+from src.utils.nn_modules import AttnBlock, Downsample, ResnetBlock, group_norm
 from src.utils.util_modules import instantiate_from_config
 
 
@@ -32,7 +32,9 @@ class TripleGrainEncoder(nn.Module):
         self.in_channels = in_channels
         self.update_router = update_router
 
-        self.conv_in = nn.Conv2d(in_channels, self.ch, kernel_size=3, stride=1, padding=1)
+        self.conv_in = nn.Conv2d(
+            in_channels, self.ch, kernel_size=3, stride=1, padding=1
+        )
 
         curr_res = resolution
         in_ch_mult = (1,) + tuple(ch_mult)
@@ -43,7 +45,11 @@ class TripleGrainEncoder(nn.Module):
             block_in = ch * in_ch_mult[i_level]
             block_out = ch * ch_mult[i_level]
             for _ in range(self.num_res_blocks):
-                block.append(ResnetBlock(in_channels=block_in, out_channels=block_out, dropout=dropout))
+                block.append(
+                    ResnetBlock(
+                        in_channels=block_in, out_channels=block_out, dropout=dropout
+                    )
+                )
                 block_in = block_out
                 if curr_res in attn_resolutions:
                     attn.append(AttnBlock(block_in))
@@ -57,12 +63,16 @@ class TripleGrainEncoder(nn.Module):
 
         def _make_grain_branch(block_in):
             branch = nn.Sequential(
-                ResnetBlock(in_channels=block_in, out_channels=block_in,  dropout=dropout),
+                ResnetBlock(
+                    in_channels=block_in, out_channels=block_in, dropout=dropout
+                ),
                 AttnBlock(block_in),
-                ResnetBlock(in_channels=block_in, out_channels=block_in,  dropout=dropout),
+                ResnetBlock(
+                    in_channels=block_in, out_channels=block_in, dropout=dropout
+                ),
                 group_norm(block_in),
                 nn.SiLU(),
-                nn.Conv2d(block_in, z_channels, kernel_size=3, stride=1, padding=1)
+                nn.Conv2d(block_in, z_channels, kernel_size=3, stride=1, padding=1),
             )
             return branch
 
@@ -75,19 +85,17 @@ class TripleGrainEncoder(nn.Module):
         # self.router = instantiate_from_config(router_config)
         self.router = router_config
 
-
     def forward(self, x, x_entropy):
         assert x.shape[2] == x.shape[3] == self.resolution
 
         hs, h_fine, h_median = self._downsample(x)
         h_coarse = hs[-1]
-        
+
         h_coarse = self.coarse_branch(h_coarse)
         h_median = self.median_branch(h_median)
         h_fine = self.fine_branch(h_fine)
 
         return self._dynamic_routing(h_coarse, h_median, h_fine, x_entropy)
-
 
     def _downsample(self, x):
         hs = [self.conv_in(x)]
@@ -108,7 +116,9 @@ class TripleGrainEncoder(nn.Module):
         return hs, h_fine, h_median
 
     def _dynamic_routing(self, h_coarse, h_median, h_fine, x_entropy):
-        gate = self.router(h_fine=h_fine, h_median=h_median, h_coarse=h_coarse, entropy=x_entropy)
+        gate = self.router(
+            h_fine=h_fine, h_median=h_median, h_coarse=h_coarse, entropy=x_entropy
+        )
         if self.update_router and self.training:
             gate = F.gumbel_softmax(gate, tau=1, dim=-1, hard=True)
 
@@ -117,22 +127,26 @@ class TripleGrainEncoder(nn.Module):
 
         h_coarse = h_coarse.repeat_interleave(4, dim=-1).repeat_interleave(4, dim=-2)
         h_median = h_median.repeat_interleave(2, dim=-1).repeat_interleave(2, dim=-2)
-        indices_repeat = indices.repeat_interleave(4, dim=-1).repeat_interleave(4, dim=-2).unsqueeze(1)
+        indices_repeat = (
+            indices.repeat_interleave(4, dim=-1)
+            .repeat_interleave(4, dim=-2)
+            .unsqueeze(1)
+        )
 
         h_triple = torch.where(indices_repeat == 0, h_coarse, h_median)
         h_triple = torch.where(indices_repeat == 1, h_median, h_triple)
         h_triple = torch.where(indices_repeat == 2, h_fine, h_triple)
 
-
         if self.update_router and self.training:
             gate_grad = gate.max(dim=1, keepdim=True)[0]
-            gate_grad = gate_grad.repeat_interleave(4, dim=-1).repeat_interleave(4, dim=-2)
+            gate_grad = gate_grad.repeat_interleave(4, dim=-1).repeat_interleave(
+                4, dim=-2
+            )
             h_triple = h_triple * gate_grad
 
-
-        coarse_mask = 0.0625 * torch.ones_like(indices_repeat, device = h_triple.device)
-        median_mask = 0.25 * torch.ones_like(indices_repeat, device = h_triple.device)
-        fine_mask = 1.0 * torch.ones_like(indices_repeat, device = h_triple.device)
+        coarse_mask = 0.0625 * torch.ones_like(indices_repeat, device=h_triple.device)
+        median_mask = 0.25 * torch.ones_like(indices_repeat, device=h_triple.device)
+        fine_mask = 1.0 * torch.ones_like(indices_repeat, device=h_triple.device)
         codebook_mask = torch.where(indices_repeat == 0, coarse_mask, median_mask)
         codebook_mask = torch.where(indices_repeat == 1, median_mask, codebook_mask)
         codebook_mask = torch.where(indices_repeat == 2, fine_mask, codebook_mask)
