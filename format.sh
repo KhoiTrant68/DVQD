@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# Find all __pycache__ directories and remove them
-find . -type d -name "__pycache__" -exec rm -r {} +
-find . -type d -name ".pytest_cache" -exec rm -r {} +
-find . -type d -name ".vscode" -exec rm -r {} +
-
+# Remove all __pycache__, .pytest_cache, and .vscode directories
+find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null
+find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null
+find . -type d -name ".vscode" -exec rm -rf {} + 2>/dev/null
 
 # Find all Python files
 PYPATH=$(find . -type f -name "*.py")

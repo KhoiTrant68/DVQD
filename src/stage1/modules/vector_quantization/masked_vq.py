@@ -142,8 +142,8 @@ class VQEmbedding(nn.Embedding):
 class MaskVectorQuantize(nn.Module):
     def __init__(
         self,
-        codebook_size,
-        codebook_dim=None,
+        codebook_size=1024,
+        codebook_dim=256,
         accept_image_fmap=True,
         commitment_beta=0.25,
         decay=0.99,

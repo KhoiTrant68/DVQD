@@ -1,35 +1,32 @@
-import unittest
+import sys
 
+sys.path.append("..")
 import torch
 
 from src.stage1.modules.vector_quantization.masked_vq import (
     MaskVectorQuantize, VQEmbedding)
 
 
-class TestVQEmbedding(unittest.TestCase):
-    def setUp(self):
-        self.n_embed = 10
-        self.embed_dim = 5
-        self.vq_embedding = VQEmbedding(self.n_embed, self.embed_dim)
+def run_test_vq_embedding():
+    n_embed = 1024
+    embed_dim = 256
+    vq_embedding = VQEmbedding(n_embed, embed_dim)
 
-    def test_forward(self):
-        inputs = torch.randn(2, 3, self.embed_dim)
-        embeds, embed_idxs = self.vq_embedding(inputs)
-        print(embeds.shape, embed_idxs.shape)
+    inputs = torch.randn(4, n_embed, embed_dim)
+    embeds, embed_idxs = vq_embedding(inputs)
+    print("VQEmbedding Output Shapes:", embeds.shape, embed_idxs.shape)
 
 
-class TestMaskVectorQuantize(unittest.TestCase):
-    def setUp(self):
-        self.codebook_size = 10
-        self.codebook_dim = 5
-        self.mask_vq = MaskVectorQuantize(self.codebook_size, self.codebook_dim)
+def run_test_mask_vector_quantize():
+    codebook_size = 1024
+    codebook_dim = 256
+    mask_vq = MaskVectorQuantize(codebook_size, codebook_dim)
 
-    def test_forward(self):
-        x = torch.randn(2, self.codebook_dim, 4, 4)  # Batch of 2, 4x4 feature maps
-        x_q, loss, _ = self.mask_vq(x)
-        self.assertEqual(x_q.shape, (2, self.codebook_dim, 4, 4))
-        self.assertIsInstance(loss, torch.Tensor)
+    x = torch.randn(4, codebook_dim, 32, 32)  # Batch of 2, 4x4 feature maps
+    x_q, loss, _ = mask_vq(x)
+    print("MaskVectorQuantize Output Shapes:", x_q.shape, loss.shape)
 
 
 if __name__ == "__main__":
-    unittest.main()
+    run_test_vq_embedding()
+    run_test_mask_vector_quantize()

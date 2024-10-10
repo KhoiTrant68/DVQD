@@ -8,7 +8,7 @@ set "dirs=__pycache__ .pytest_cache .vscode"
 for %%d in (%dirs%) do (
     for /d /r %%f in (%%d) do (
         echo Removing directory: %%f
-        rmdir /s /q "%%f"
+        rmdir /s /q "%%f" 2>nul
     )
 )
 
