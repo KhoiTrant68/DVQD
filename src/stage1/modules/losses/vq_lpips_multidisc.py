@@ -54,6 +54,7 @@ class VQLPIPSWithDiscriminator(nn.Module):
         disc_weight_max=None,
         budget_loss_config=None,
     ):
+
         super().__init__()
         assert disc_loss in ["hinge", "vanilla", "bce"]
 
@@ -108,6 +109,14 @@ class VQLPIPSWithDiscriminator(nn.Module):
         split="train",
         gate=None,
     ):
+        print("codebook_loss:", codebook_loss.shape)
+        print("inputs:", inputs.shape)
+        print("reconstructions:", reconstructions.shape)
+        print("optimizer_idx:", optimizer_idx.shape)
+        print("global_step:", global_step.shape)
+        print("last_layer:", last_layer.shape)
+        print("gate", gate.shape)
+
         inputs = inputs.to(torch.float32)
         reconstructions = reconstructions.to(torch.float32)
         rec_loss = torch.abs(inputs - reconstructions)
