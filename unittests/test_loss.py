@@ -22,6 +22,9 @@ def test_vq_lpips_with_discriminator():
             "calculate_all": True,
         },
     }
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     loss_fn = VQLPIPSWithDiscriminator(
         disc_start=0,
         disc_config=disc_config,
@@ -36,21 +39,24 @@ def test_vq_lpips_with_discriminator():
         disc_loss="hinge",
         disc_weight_max=0.75,
         budget_loss_config=budget_loss_config,
-    )
+    ).to(device)
+
+    loss_fn.training = False
 
     batch_size = 4
     channels = 3
     height = 256
     width = 256
 
-    codebook_loss = torch.rand(batch_size)
-    inputs = torch.rand(batch_size, channels, height, width)
-    reconstructions = torch.rand(batch_size, channels, height, width)
-    optimizer_idx = torch.tensor(0)
-    global_step = torch.tensor(0)
-    # last_layer = torch.rand(channels, height // 2, 3, 3, requires_grad=True)
-    last_layer = None
-    gate = torch.rand(batch_size, 2, height // 16, width // 16)
+    codebook_loss = torch.rand(batch_size, device=device)
+    inputs = torch.rand(batch_size, channels, height, width, device=device)
+    reconstructions = torch.rand(batch_size, channels, height, width, device=device)
+    optimizer_idx = torch.tensor(0, device=device)
+    global_step = torch.tensor(0, device=device)
+    last_layer = torch.rand(
+        channels, height // 2, 3, 3, device=device, requires_grad=True
+    )
+    gate = torch.rand(batch_size, 2, height // 16, width // 16, device=device)
 
     loss, log_dict = loss_fn(
         codebook_loss,
@@ -64,14 +70,16 @@ def test_vq_lpips_with_discriminator():
         gate=gate,
     )
 
-    print(f"Generator loss shape: {loss.shape}")
+    print(loss, log_dict)
+
+    print(f"Generator loss shape: {loss}")
     for key, value in log_dict.items():
         if isinstance(value, torch.Tensor):
-            print(f"{key} shape: {value.shape}")
+            print(f"{key} shape: {value}")
         else:
             print(f"{key}: {value} (type: {type(value)})")
 
-    optimizer_idx = torch.tensor(1)
+    optimizer_idx = torch.tensor(1, device=device)
     d_loss, d_log_dict = loss_fn(
         codebook_loss,
         inputs,
@@ -84,10 +92,10 @@ def test_vq_lpips_with_discriminator():
         gate=gate,
     )
 
-    print(f"Discriminator loss shape: {d_loss.shape}")
+    print(f"Discriminator loss shape: {d_loss}")
     for key, value in d_log_dict.items():
         if isinstance(value, torch.Tensor):
-            print(f"{key} shape: {value.shape}")
+            print(f"{key} shape: {value}")
         else:
             print(f"{key}: {value} (type: {type(value)})")
 

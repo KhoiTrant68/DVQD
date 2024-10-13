@@ -1,6 +1,12 @@
 import importlib
 
 
+def disabled_train(self, mode=True):
+    """Overwrite model.train with this function to make sure train/eval mode
+    does not change anymore."""
+    return self
+
+
 def instantiate_from_config(config):
     """Instantiates an object from a configuration dictionary.
 

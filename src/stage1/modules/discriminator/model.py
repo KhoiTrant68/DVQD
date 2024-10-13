@@ -1,14 +1,6 @@
 import torch.nn as nn
 
-from src.utils.nn_modules import ActNorm
-
-
-def weights_init(m):
-    if isinstance(m, nn.Conv2d):
-        nn.init.normal_(m.weight, 0.0, 0.02)
-    elif isinstance(m, nn.BatchNorm2d):
-        nn.init.normal_(m.weight, 1.0, 0.02)
-        nn.init.constant_(m.bias, 0)
+from src.utils.nn_modules import ActNorm, weights_init
 
 
 class NLayerDiscriminator(nn.Module):
