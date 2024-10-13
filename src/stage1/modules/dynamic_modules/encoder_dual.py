@@ -102,9 +102,7 @@ class DualGrainEncoder(nn.Module):
             block_in_finegrain, z_channels, kernel_size=3, stride=1, padding=1
         )
 
-        # self.router = instantiate_from_config(router_config)
-        self.router = router_config
-
+        self.router = instantiate_from_config(router_config)
         self.update_router = update_router
 
     def forward(self, x, x_entropy):

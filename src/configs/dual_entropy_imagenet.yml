@@ -14,10 +14,11 @@ model:
         resolution: 256
         z_channels: 256
         router_config:
-          target: src.stage1.modules.dynamic_modules.router_dual.DualGrainFeatureRouter
+          target: src.stage1.modules.dynamic_modules.router_dual.DualGrainDynamicEntropyRouter
           params:
-            num_channels: 256
-            num_groups: 32
+            # json_path: src/entropy_threshold/entropy_thresholds_imagenet_train_patch-16.json
+            fine_grain_ratio_min: 0.01
+            fine_grain_ratio_max: 0.99
     decoderconfig:
       target: src.stage1.modules.dynamic_modules.decoder.Decoder
       params:

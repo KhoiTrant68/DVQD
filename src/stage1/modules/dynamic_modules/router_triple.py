@@ -39,7 +39,6 @@ class TripleGrainFeatureRouter(nn.Module):
         ]
         avg_h_fine = self.gate_fine_pool(h_fine)
         avg_h_median = self.gate_median_pool(h_median)
-        print(h_coarse.shape, avg_h_median.shape, avg_h_fine.shape)
         h_logistic = torch.cat([h_coarse, avg_h_median, avg_h_fine], dim=1).permute(
             0, 2, 3, 1
         )

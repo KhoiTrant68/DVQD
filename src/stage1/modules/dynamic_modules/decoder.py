@@ -13,7 +13,6 @@ class PositionEmbedding2DLearned(nn.Module):
     def __init__(self, n_row, feats_dim, n_col=None):
         super().__init__()
         n_col = n_col or n_row
-        print("feats_dim: ", feats_dim)
         self.row_embed = nn.Embedding(n_row, feats_dim)
         self.col_embed = nn.Embedding(n_col, feats_dim)
         self.reset_parameters()
@@ -30,9 +29,6 @@ class PositionEmbedding2DLearned(nn.Module):
 
         x_emb = self.col_embed(i).unsqueeze(0).expand(h, -1, -1)
         y_emb = self.row_embed(j).unsqueeze(1).expand(-1, w, -1)
-        print("x: ", x.shape)
-        print("x_emb: ", x_emb.shape)
-        print("y_emb: ", y_emb.shape)
 
         pos = (
             (x_emb + y_emb).permute(2, 0, 1).unsqueeze(0).expand(x.shape[0], -1, -1, -1)
@@ -150,7 +146,6 @@ class Decoder(nn.Module):
             raise NotImplementedError()
 
     def forward(self, h):
-        print("h: ", h.shape)
         if self.position_type in ["learned", "rope"]:
             h = self.position_bias(h)
         elif self.position_type == "learned+relative":
@@ -170,9 +165,7 @@ class Decoder(nn.Module):
                 nH=self.window_size,
             )
         elif self.position_type == "rope+learned":
-            print("h_before: ", h.shape)
             h = self.position_bias_rope(h)
-            print("h_after: ", h.shape)
             h = self.position_bias_learned(h)
 
         # z to block_in

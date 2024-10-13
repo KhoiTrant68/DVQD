@@ -97,7 +97,7 @@ class DualGrainVQModel(Stage1Model):
             Decoded image tensor.
         """
         quant = self.post_quant_conv(quant)
-        dec = self.decoder(quant, grain_indices)
+        dec = self.decoder(quant)
         return dec
 
     def forward(
