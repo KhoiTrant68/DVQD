@@ -1,5 +1,4 @@
 import json
-from abc import abstractmethod
 
 import numpy as np
 import torch
@@ -48,8 +47,8 @@ class DualGrainEntropyRouter(nn.Module):
         super().__init__(*args, **kwargs)
 
     def _get_gate_from_threshold(self, entropy, threshold):
-        gate_fine = (entropy > threshold).unsqueeze(-1)
-        gate_coarse = (entropy <= threshold).unsqueeze(-1)
+        gate_fine = (entropy > threshold).float().unsqueeze(-1)
+        gate_coarse = (entropy <= threshold).float().unsqueeze(-1)
         gate = torch.cat([gate_coarse, gate_fine], dim=-1)
         return gate
 
