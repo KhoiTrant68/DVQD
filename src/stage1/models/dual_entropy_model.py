@@ -99,9 +99,7 @@ class DualGrainVQModel(Stage1Model):
         )
         return quant, emb_loss, info, grain_indices, gate, x_entropy
 
-    def decode(
-        self, quant: torch.Tensor
-    ) -> torch.Tensor:
+    def decode(self, quant: torch.Tensor) -> torch.Tensor:
         """
         Decodes quantized embeddings into an image.
 
