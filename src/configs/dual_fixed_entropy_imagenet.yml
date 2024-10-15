@@ -1,5 +1,5 @@
 model:
-  target: src.stage1.models.dual_feat_model.DualGrainVQModel
+  target: src.stage1.models.dual_entropy_model.DualGrainVQModel
   params:
     encoderconfig:
       target: src.stage1.modules.dynamic_modules.encoder_dual.DualGrainEncoder
@@ -14,10 +14,10 @@ model:
         resolution: 256
         z_channels: 256
         router_config:
-          target: src.stage1.modules.dynamic_modules.router_dual.DualGrainFeatureRouter
+          target: src.stage1.modules.dynamic_modules.router_dual.DualGrainFixedEntropyRouter
           params:
-            num_channels: 256
-            num_groups: 32
+            json_path: /home/infordio-ai/khoi/HU/DVQD/src/stage1/threshold/thresholds/entropy_thresholds_imagenet_train_patch-16.json
+            fine_grain_ratito: 0.5
     decoderconfig:
       target: src.stage1.modules.dynamic_modules.decoder.Decoder
       params:

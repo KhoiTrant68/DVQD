@@ -102,9 +102,7 @@ class DualGrainEncoder(nn.Module):
             block_in_finegrain, z_channels, kernel_size=3, stride=1, padding=1
         )
 
-        # self.router = instantiate_from_config(router_config)
-        self.router = router_config
-
+        self.router = instantiate_from_config(router_config)
         self.update_router = update_router
 
     def forward(self, x, x_entropy):
@@ -148,6 +146,7 @@ class DualGrainEncoder(nn.Module):
 
     def _dynamic_routing(self, h_coarse, h_fine, x_entropy):
         gate = self.router(h_fine=h_fine, h_coarse=h_coarse, entropy=x_entropy)
+        print('gate', gate.shape)
         if self.update_router:
             gate = F.gumbel_softmax(gate, dim=-1, hard=True)
 

@@ -84,7 +84,7 @@ class DualGrainVQModel(Stage1Model):
         return quant, emb_loss, info, grain_indices, gate
 
     def decode(
-        self, quant: torch.Tensor, grain_indices: torch.Tensor = None
+        self, quant: torch.Tensor
     ) -> torch.Tensor:
         """
         Decodes quantized embeddings into an image.
@@ -97,7 +97,7 @@ class DualGrainVQModel(Stage1Model):
             Decoded image tensor.
         """
         quant = self.post_quant_conv(quant)
-        dec = self.decoder(quant, grain_indices)
+        dec = self.decoder(quant)
         return dec
 
     def forward(
@@ -117,5 +117,5 @@ class DualGrainVQModel(Stage1Model):
                 - Gate values.
         """
         quant, diff, _, grain_indices, gate = self.encode(input)
-        dec = self.decode(quant, grain_indices)
+        dec = self.decode(quant)
         return dec, diff, grain_indices, gate
