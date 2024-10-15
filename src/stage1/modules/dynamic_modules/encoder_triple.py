@@ -82,8 +82,7 @@ class TripleGrainEncoder(nn.Module):
         block_in_fine = block_in_median // (ch_mult[-2] // ch_mult[-3])
         self.fine_branch = _make_grain_branch(block_in_fine)
 
-        # self.router = instantiate_from_config(router_config)
-        self.router = router_config
+        self.router = instantiate_from_config(router_config)
 
     def forward(self, x, x_entropy):
         assert x.shape[2] == x.shape[3] == self.resolution

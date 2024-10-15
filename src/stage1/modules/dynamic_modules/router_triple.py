@@ -51,17 +51,20 @@ class TripleGrainEntropyRouter(nn.Module):
         super().__init__(*args, **kwargs)
 
     def _get_gate_from_threshold(self, entropy, threshold_median, threshold_fine):
-        gate_fine = (entropy > threshold_fine).unsqueeze(-1)
+        gate_fine = (entropy > threshold_fine).float().unsqueeze(-1)
         gate_median = (
-            (entropy <= threshold_fine) & (entropy > threshold_median)
-        ).unsqueeze(-1)
-        gate_coarse = (entropy <= threshold_median).unsqueeze(-1)
+            ((entropy <= threshold_fine) & (entropy > threshold_median))
+            .float()
+            .unsqueeze(-1)
+        )
+        gate_coarse = (entropy <= threshold_median).float().unsqueeze(-1)
         gate = torch.cat([gate_coarse, gate_median, gate_fine], dim=-1)
         return gate
 
 
 class TripleGrainFixedEntropyRouter(TripleGrainEntropyRouter):
     def __init__(self, json_path, median_grain_ratio, fine_grain_ratio):
+        super().__init__()
         with open(json_path, "r", encoding="utf-8") as f:
             content = json.load(f)
         self.median_grain_threshold = content[str(int(100 - median_grain_ratio * 100))]

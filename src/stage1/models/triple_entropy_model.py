@@ -100,21 +100,18 @@ class TripleGrainVQModel(Stage1Model):
         )
         return quant, emb_loss, info, grain_indices, gate, x_entropy
 
-    def decode(
-        self, quant: torch.Tensor, grain_indices: torch.Tensor = None
-    ) -> torch.Tensor:
+    def decode(self, quant: torch.Tensor) -> torch.Tensor:
         """
         Decodes quantized embeddings into an image.
 
         Args:
             quant: Quantized embeddings.
-            grain_indices: Grain indices.
 
         Returns:
             Decoded image tensor.
         """
         quant = self.post_quant_conv(quant)
-        dec = self.decoder(quant, grain_indices)
+        dec = self.decoder(quant)
         return dec
 
     def forward(
@@ -135,5 +132,5 @@ class TripleGrainVQModel(Stage1Model):
                 - Entropy map.
         """
         quant, diff, _, grain_indices, gate, x_entropy = self.encode(input)
-        dec = self.decode(quant, grain_indices)
+        dec = self.decode(quant)
         return dec, diff, grain_indices, gate, x_entropy

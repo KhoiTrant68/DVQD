@@ -14,7 +14,7 @@ def load_config(config_path):
     return config
 
 
-def test_dual_grain_vq_model(config_path):
+def test_grain_vq_model(config_path):
     # Load the configuration
     config = OmegaConf.load(config_path)
 
@@ -35,16 +35,25 @@ def test_dual_grain_vq_model(config_path):
 
 
 # Run the test
-test_dual_grain_vq_model(
-    "/home/infordio-ai/khoi/HU/DVQD/src/configs/dual_feat_imagenet.yml"
-)
+# test_grain_vq_model(
+#     "/home/infordio-ai/khoi/HU/DVQD/src/configs/dual_feat_imagenet.yml"
+# )
 
 
-test_dual_grain_vq_model(
-    "/home/infordio-ai/khoi/HU/DVQD/src/configs/dual_dynamic_entropy_imagenet.yml"
-)
+# test_grain_vq_model(
+#     "/home/infordio-ai/khoi/HU/DVQD/src/configs/dual_dynamic_entropy_imagenet.yml"
+# )
 
 
-test_dual_grain_vq_model(
-    "/home/infordio-ai/khoi/HU/DVQD/src/configs/dual_fixed_entropy_imagenet.yml"
+# test_grain_vq_model(
+#     "/home/infordio-ai/khoi/HU/DVQD/src/configs/dual_fixed_entropy_imagenet.yml"
+# )
+
+
+# test_grain_vq_model(
+#     "/home/infordio-ai/khoi/HU/DVQD/src/configs/triple_feat_imagenet.yml"
+# )
+
+test_grain_vq_model(
+    "/home/infordio-ai/khoi/HU/DVQD/src/configs/triple_fixed_entropy_imagenet.yml"
 )
