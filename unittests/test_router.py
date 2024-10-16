@@ -1,11 +1,13 @@
+import sys
 import unittest
 
 import torch
 
+sys.path.append("..")
 from src.stage1.modules.dynamic_modules.router_dual import *
 from src.stage1.modules.dynamic_modules.router_triple import *
 
-PATH = "D:\\AwesomeCV\\DynamicVectorQuantization\\scripts\\tools\\thresholds\\entropy_thresholds_imagenet_train_patch-16.json"
+PATH = "/home/infordio-ai/khoi/HU/DVQD/src/stage1/threshold/thresholds/entropy_thresholds_imagenet_train_patch-16.json"
 
 
 class TestDualGrainFeatureRouter(unittest.TestCase):
@@ -13,8 +15,8 @@ class TestDualGrainFeatureRouter(unittest.TestCase):
         self.router = DualGrainFeatureRouter(num_groups=None, num_channels=4)
 
     def test_forward(self):
-        h_coarse = torch.randn(1, 4, 8, 8)
-        h_fine = torch.randn(1, 4, 4, 4)
+        h_coarse = torch.randn(1, 4, 4, 4)
+        h_fine = torch.randn(1, 4, 8, 8)
         output = self.router.forward(h_coarse, h_fine)
         print("TestDualGrainFeatureRouter", output.shape)
 
@@ -45,7 +47,7 @@ class TestDualGrainFixedEntropyRouter(unittest.TestCase):
 class TestDualGrainDynamicEntropyRouter(unittest.TestCase):
     def setUp(self):
         self.router = DualGrainDynamicEntropyRouter(
-            fine_grain_ratio_min=0.01, fine_grain_ratito_max=0.99
+            fine_grain_ratio_min=0.01, fine_grain_ratio_max=0.99
         )
 
     def test_forward(self):
@@ -62,9 +64,9 @@ class TestTripleGrainFeatureRouter(unittest.TestCase):
         self.router = TripleGrainFeatureRouter(num_channels=16)
 
     def test_forward(self):
-        h_coarse = torch.randn(1, 16, 32, 32)
+        h_coarse = torch.randn(1, 16, 8, 8)
         h_median = torch.randn(1, 16, 16, 16)
-        h_fine = torch.randn(1, 16, 8, 8)
+        h_fine = torch.randn(1, 16, 32, 32)
         output = self.router(h_coarse, h_median, h_fine)
         print("TestTripleGrainFeatureRouter", output.shape)
 

@@ -8,8 +8,7 @@ from src.utils.draw import draw_dual_grain_256res_color
 
 
 class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
-    """
-    Abstract base class for a stage 1 model.
+    """Abstract base class for a stage 1 model.
 
     Attributes:
         encoder (nn.Module): Encoder module.
@@ -17,16 +16,23 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
         quantize (nn.Module): Quantization module.
     """
 
+    def __init__(self):
+        """Initialize the Stage1Model with encoder, decoder, and quantization modules."""
+        super().__init__()
+        self.encoder = None
+        self.decoder = None
+        self.quantize = None
+
     @abc.abstractmethod
     def encode(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Generate the encode codebook from the input.
+        Generate the encoded codebook from the input.
 
         Args:
-            x: Input tensor.
+            x (torch.Tensor): Input tensor.
 
         Returns:
-            Encoded codebook tensor.
+            torch.Tensor: Encoded codebook tensor.
         """
         pass
 
@@ -36,20 +42,20 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
         Generate the decoded image from the given code.
 
         Args:
-            z: Code tensor.
+            z (torch.Tensor): Code tensor.
 
         Returns:
-            Decoded image tensor.
+            torch.Tensor: Decoded image tensor.
         """
         pass
 
     def init_from_ckpt(self, path: str, ignore_keys: list = None) -> None:
         """
-        Initialize model from checkpoint.
+        Initialize model from a checkpoint file.
 
         Args:
-            path: Path to checkpoint file.
-            ignore_keys: List of keys to ignore when loading state dict.
+            path (str): Path to the checkpoint file.
+            ignore_keys (list, optional): List of keys to ignore when loading the state dict.
         """
         if ignore_keys is None:
             ignore_keys = []
@@ -66,14 +72,14 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
 
     def get_input(self, batch: Dict, k: str) -> torch.Tensor:
         """
-        Get input tensor from batch dictionary.
+        Get input tensor from a batch dictionary.
 
         Args:
-            batch: Batch dictionary.
-            k: Key for input tensor.
+            batch (Dict): Batch dictionary containing input data.
+            k (str): Key for the input tensor in the batch.
 
         Returns:
-            Input tensor.
+            torch.Tensor: Input tensor.
         """
         x = batch[k]
         if len(x.shape) == 3:
@@ -92,20 +98,18 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
         gate: torch.Tensor = None,
     ) -> Tuple[torch.Tensor, dict]:
         """
-        Calculates the loss for either autoencoder or discriminator.
+        Calculate the loss for either autoencoder or discriminator.
 
         Args:
-            x: Input image tensor.
-            qloss: Quantization loss.
-            xrec: Reconstructed image tensor.
-            step: Current training step (epoch or global step).
-            optimizer_idx: Index of the optimizer being used (0 for AE, 1 for Disc).
-            gate: Gate values (optional).
+            x (torch.Tensor): Input image tensor.
+            xrec (torch.Tensor): Reconstructed image tensor.
+            qloss (torch.Tensor): Quantization loss.
+            step (int): Current training step (epoch or global step).
+            optimizer_idx (int): Index of the optimizer being used (0 for AE, 1 for Disc).
+            gate (torch.Tensor, optional): Gate values.
 
         Returns:
-            A tuple containing:
-                - Calculated loss.
-                - Log dictionary.
+            Tuple[torch.Tensor, dict]: A tuple containing the calculated loss and a log dictionary.
         """
         kwargs = {
             "codebook_loss": qloss,
@@ -125,10 +129,10 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
 
     def get_last_layer(self) -> torch.Tensor:
         """
-        Returns the weights of the last layer of the decoder.
+        Return the weights of the last layer of the decoder.
 
         Returns:
-            Weights of the last decoder layer.
+            torch.Tensor: Weights of the last decoder layer.
         """
         try:
             return self.decoder.conv_out.weight
@@ -139,23 +143,25 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
         self, device, mode: str, batch: dict, **kwargs
     ) -> Dict[str, torch.Tensor]:
         """
-        Logs input images, reconstructions, grain maps, and entropy maps.
+        Log input images, reconstructions, grain maps, and entropy maps.
 
         Args:
-            batch: Batch dictionary.
+            device: Device to which tensors are moved.
+            mode (str): Mode of operation, either 'feat' or other.
+            batch (dict): Batch dictionary containing input data.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing logged image tensors.
+            Dict[str, torch.Tensor]: A dictionary containing logged image tensors.
         """
         log = dict()
         x = self.get_input(batch, self.image_key)
         x = x.to(device)
         x_entropy = None
         if mode == "feat":
-            xrec, _, grain_indices, gate = self(x)
+            xrec, _, grain_indices, _ = self(x)
         else:
-            xrec, _, grain_indices, gate, x_entropy = self(x)
+            xrec, _, grain_indices, _, x_entropy = self(x)
 
         log["inputs"] = x
         log["reconstructions"] = xrec
@@ -175,14 +181,14 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
         self, code: torch.Tensor, mode="entropy"
     ) -> torch.Tensor:
         """
-        Retrieves codebook embeddings for given codes.
+        Retrieve codebook embeddings for given codes.
 
         Args:
-            code: Code tensor.
-            mode (str, optional): mode of model. Choices = ['entropy', 'feat']. Defaults to "entropy".
+            code (torch.Tensor): Code tensor.
+            mode (str, optional): Mode of model. Choices are ['entropy', 'feat']. Defaults to "entropy".
 
         Returns:
-            Codebook embeddings for the given codes.
+            torch.Tensor: Codebook embeddings for the given codes.
         """
         if mode == "entropy":
             embed = self.quantize.get_codebook_entry(code)

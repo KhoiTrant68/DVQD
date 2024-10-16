@@ -7,7 +7,7 @@ from torch.nn import functional as F
 
 
 class VQEmbedding(nn.Embedding):
-    """VQ embedding module with ema update."""
+    """Vector Quantization (VQ) embedding module with Exponential Moving Average (EMA) update."""
 
     def __init__(
         self,
@@ -33,6 +33,14 @@ class VQEmbedding(nn.Embedding):
 
     @torch.no_grad()
     def compute_distances(self, inputs):
+        """Compute the distances between input vectors and the codebook.
+
+        Args:
+            inputs (torch.Tensor): Input tensor of shape [..., embed_dim].
+
+        Returns:
+            torch.Tensor: Distances of shape [..., n_embed].
+        """
         codebook_t = self.weight[:-1, :].t()
 
         (embed_dim, _) = codebook_t.shape
@@ -56,6 +64,14 @@ class VQEmbedding(nn.Embedding):
 
     @torch.no_grad()
     def find_nearest_embedding(self, inputs):
+        """Find the nearest embedding indices for the input vectors.
+
+        Args:
+            inputs (torch.Tensor): Input tensor of shape [..., embed_dim].
+
+        Returns:
+            torch.Tensor: Indices of the nearest embeddings.
+        """
         distances = self.compute_distances(inputs)  # [B, h, w, n_embed or n_embed+1]
         embed_idxs = distances.argmin(dim=-1)  # use padding index or not
 
@@ -63,6 +79,15 @@ class VQEmbedding(nn.Embedding):
 
     @torch.no_grad()
     def _tile_with_noise(self, x, target_n):
+        """Tile the input tensor with noise to reach a target number of vectors.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape [B, embed_dim].
+            target_n (int): Target number of vectors.
+
+        Returns:
+            torch.Tensor: Tiled tensor with added noise.
+        """
         B, embed_dim = x.shape
         n_repeats = (target_n + B - 1) // B
         std = x.new_ones(embed_dim) * 0.01 / np.sqrt(embed_dim)
@@ -72,7 +97,12 @@ class VQEmbedding(nn.Embedding):
 
     @torch.no_grad()
     def _update_buffers(self, vectors, idxs):
+        """Update the EMA buffers for cluster sizes and embeddings.
 
+        Args:
+            vectors (torch.Tensor): Input vectors of shape [..., embed_dim].
+            idxs (torch.Tensor): Indices of the nearest embeddings.
+        """
         n_embed, embed_dim = self.weight.shape[0] - 1, self.weight.shape[-1]
 
         vectors = vectors.reshape(-1, embed_dim)
@@ -114,7 +144,7 @@ class VQEmbedding(nn.Embedding):
 
     @torch.no_grad()
     def _update_embedding(self):
-
+        """Update the embedding weights using the EMA values."""
         n_embed = self.weight.shape[0] - 1
         n = self.cluster_size_ema.sum()
         normalized_cluster_size = (
@@ -123,6 +153,14 @@ class VQEmbedding(nn.Embedding):
         self.weight[:-1, :] = self.embed_ema / normalized_cluster_size.reshape(-1, 1)
 
     def forward(self, inputs):
+        """Forward pass to quantize the input vectors.
+
+        Args:
+            inputs (torch.Tensor): Input tensor of shape [..., embed_dim].
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: Quantized embeddings and their indices.
+        """
         embed_idxs = self.find_nearest_embedding(inputs)
         if self.training and self.ema:
             self._update_buffers(inputs, embed_idxs)
@@ -135,11 +173,21 @@ class VQEmbedding(nn.Embedding):
         return embeds, embed_idxs
 
     def embed(self, idxs):
+        """Retrieve embeddings for the given indices.
+
+        Args:
+            idxs (torch.Tensor): Indices of the embeddings.
+
+        Returns:
+            torch.Tensor: Embeddings corresponding to the indices.
+        """
         embeds = super().forward(idxs)
         return embeds
 
 
 class MaskVectorQuantize(nn.Module):
+    """Masked Vector Quantization module."""
+
     def __init__(
         self,
         codebook_size=1024,
@@ -164,6 +212,16 @@ class MaskVectorQuantize(nn.Module):
         self.codebook.weight.data.uniform_(-1.0 / codebook_size, 1.0 / codebook_size)
 
     def forward(self, x, codebook_mask=None, *ignorewargs, **ignorekwargs):
+        """Forward pass for vector quantization with optional masking.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+            codebook_mask (Optional[torch.Tensor]): Mask for the codebook.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor, Tuple[None, None, torch.Tensor]]:
+            Quantized tensor, loss, and additional outputs.
+        """
         need_transpose = not self.channel_last and not self.accept_image_fmap
 
         if self.accept_image_fmap:
@@ -210,6 +268,16 @@ class MaskVectorQuantize(nn.Module):
 
     @torch.no_grad()
     def get_soft_codes(self, x, temp=1.0, stochastic=False):
+        """Get soft codes for the input vectors.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+            temp (float): Temperature for softmax.
+            stochastic (bool): Whether to sample stochastically.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: Soft codes and their indices.
+        """
         distances = self.codebook.compute_distances(x)
         soft_code = F.softmax(-distances / temp, dim=-1)
 
@@ -223,5 +291,13 @@ class MaskVectorQuantize(nn.Module):
         return soft_code, code
 
     def get_codebook_entry(self, indices, *kwargs):
+        """Retrieve codebook entries for the given indices.
+
+        Args:
+            indices (torch.Tensor): Indices of the codebook entries.
+
+        Returns:
+            torch.Tensor: Codebook entries corresponding to the indices.
+        """
         z_q = self.codebook.embed(indices)  # (batch, height, width, channel)
         return z_q

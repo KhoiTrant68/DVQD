@@ -85,20 +85,20 @@ data:
   params:
     batch_size: 2
     num_workers: 4
-    train_val: False,
+    train_val: False
     train:
       target: src.data.imagenet.ImageNetDataset
       params:
         split: train
         config:
-          data_dir": /home/infordio-ai/khoi/HU/dataset/imagenet-mini/train,
-          size: 256,
-          random_crop: True,
+          data_dir: ../dataset/imagenet-mini/train
+          size: 256
+          random_crop: True
     val:
       target: src.data.imagenet.ImageNetDataset
       params:
         split: val
         config:
-          data_dir": /home/infordio-ai/khoi/HU/dataset/imagenet-mini/val,
-          size: 256,
-          random_crop: False,
+          data_dir: ../dataset/imagenet-mini/val
+          size: 256
+          random_crop: False

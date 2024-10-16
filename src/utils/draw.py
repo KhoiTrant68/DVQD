@@ -5,7 +5,6 @@ from einops import rearrange
 from PIL import Image
 from torchvision import transforms
 
-# Define color dictionary outside functions for reusability
 COLOR_DICT = {
     "red": (255, 0, 0),
     "green": (0, 255, 0),
@@ -14,7 +13,6 @@ COLOR_DICT = {
     "blue": (0, 0, 255),
 }
 
-# Use torchvision.transforms.ToPILImage() directly instead of defining a variable
 transform_to_pil = transforms.ToPILImage()
 
 

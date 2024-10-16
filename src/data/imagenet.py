@@ -10,9 +10,18 @@ sys.path.append("../..")
 
 
 class BaseDataset(Dataset):
-    """A base dataset class for loading and preprocessing images."""
 
     def __init__(self, split, paths, size=None, random_crop=False, labels=None):
+        """
+        Initialize the BaseDataset.
+
+        Args:
+            split (str): The dataset split, either 'train' or 'val'.
+            paths (list): List of image file paths.
+            size (int, optional): The size to which images are resized.
+            random_crop (bool, optional): Whether to apply random cropping.
+            labels (dict, optional): A dictionary of labels associated with the images.
+        """
         self.paths = sorted(paths)
         self.size = size
         self.random_crop = random_crop
@@ -45,6 +54,15 @@ class BaseDataset(Dataset):
         return len(self.paths)
 
     def preprocess_image(self, image_path):
+        """
+        Preprocess an image by applying transformations.
+
+        Args:
+            image_path (str): The file path of the image to preprocess.
+
+        Returns:
+            Tensor: The transformed image tensor.
+        """
         image = Image.open(image_path).convert("RGB")
         return self.transforms(image)
 
@@ -59,6 +77,15 @@ class ImageNetDataset(BaseDataset):
     """ImageNet dataset class using BaseDataset."""
 
     def __init__(self, split: str, data_dir=None, size=256, random_crop=False):
+        """
+        Initialize the ImageNetDataset.
+
+        Args:
+            split (str): The dataset split, either 'train' or 'val'.
+            data_dir (str, optional): The directory containing the ImageNet images.
+            size (int, optional): The size to which images are resized.
+            random_crop (bool, optional): Whether to apply random cropping.
+        """
         self.split = split
         image_paths = sorted(
             glob(os.path.join(data_dir, "**", "*.JPEG"), recursive=True)

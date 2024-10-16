@@ -9,21 +9,6 @@ from src.utils.util_modules import instantiate_from_config
 class DualGrainVQModel(Stage1Model):
     """
     Dual Grain VQ Model for image generation.
-
-    This module implements a dual grain vector quantization model. It consists of an encoder,
-    a decoder, a vector quantization layer, and a discriminator for adversarial training.
-
-    Args:
-        encoderconfig: Configuration for the encoder.
-        decoderconfig: Configuration for the decoder.
-        lossconfig: Configuration for the loss function.
-        vqconfig: Configuration for the vector quantization layer.
-        quant_before_dim: Number of channels before quantization.
-        quant_after_dim: Number of channels after quantization.
-        quant_sample_temperature: Temperature for sampling from the quantized embeddings.
-        ckpt_path: Path to a checkpoint file to load weights from.
-        ignore_keys: List of keys to ignore when loading weights from a checkpoint.
-        image_key: Key for the input image in the input batch dictionary.
     """
 
     def __init__(
@@ -39,6 +24,21 @@ class DualGrainVQModel(Stage1Model):
         ignore_keys: List[str] = [],
         image_key: str = "image",
     ):
+        """
+        Initializes the DualGrainVQModel with the given configurations.
+
+        Args:
+            encoderconfig: Configuration for the encoder.
+            decoderconfig: Configuration for the decoder.
+            lossconfig: Configuration for the loss function.
+            vqconfig: Configuration for the vector quantization layer.
+            quant_before_dim: Number of channels before quantization.
+            quant_after_dim: Number of channels after quantization.
+            quant_sample_temperature: Temperature for sampling from the quantized embeddings.
+            ckpt_path: Path to a checkpoint file to load weights from.
+            ignore_keys: List of keys to ignore when loading weights from a checkpoint.
+            image_key: Key for the input image in the input batch dictionary.
+        """
         super().__init__()
 
         self.image_key = image_key
@@ -65,11 +65,11 @@ class DualGrainVQModel(Stage1Model):
 
         Returns:
             A tuple containing:
-                - Quantized embeddings.
-                - Embedding loss.
-                - Information dictionary from the quantization layer.
-                - Grain indices.
-                - Gate values.
+                - Quantized embeddings (torch.Tensor).
+                - Embedding loss (torch.Tensor).
+                - Information dictionary from the quantization layer (dict).
+                - Grain indices (torch.Tensor).
+                - Gate values (torch.Tensor).
         """
         h_dict = self.encoder(x, None)
         h = h_dict["h_dual"]
@@ -89,7 +89,6 @@ class DualGrainVQModel(Stage1Model):
 
         Args:
             quant: Quantized embeddings.
-            grain_indices: Grain indices.
 
         Returns:
             Decoded image tensor.
@@ -109,10 +108,10 @@ class DualGrainVQModel(Stage1Model):
 
         Returns:
             A tuple containing:
-                - Decoded image tensor.
-                - Quantization loss.
-                - Grain indices.
-                - Gate values.
+                - Decoded image tensor (torch.Tensor).
+                - Quantization loss (torch.Tensor).
+                - Grain indices (torch.Tensor).
+                - Gate values (torch.Tensor).
         """
         quant, diff, _, grain_indices, gate = self.encode(input)
         dec = self.decode(quant)

@@ -10,23 +10,6 @@ from src.utils.util_modules import disabled_train, instantiate_from_config
 class DualGrainVQModel(Stage1Model):
     """
     Dual Grain VQ Model for image generation.
-
-    This module implements a dual grain vector quantization model. It consists of an encoder,
-    a decoder, a vector quantization layer, and a discriminator for adversarial training.
-
-    Args:
-        encoderconfig: Configuration for the encoder.
-        decoderconfig: Configuration for the decoder.
-        lossconfig: Configuration for the loss function.
-        vqconfig: Configuration for the vector quantization layer.
-        quant_before_dim: Number of channels before quantization.
-        quant_after_dim: Number of channels after quantization.
-        quant_sample_temperature: Temperature for sampling from the quantized embeddings.
-        ckpt_path: Path to a checkpoint file to load weights from.
-        ignore_keys: List of keys to ignore when loading weights from a checkpoint.
-        image_key: Key for the input image in the input batch dictionary.
-        entropy_patch_size: Patch size for entropy calculation.
-        image_size: Size of the input image.
     """
 
     def __init__(
@@ -45,6 +28,26 @@ class DualGrainVQModel(Stage1Model):
         image_size: int = 256,
         **ignore_kwargs,
     ):
+        """
+        Initialize the DualGrainVQModel.
+
+        This method sets up the encoder, decoder, quantization, and entropy calculation
+        components of the model, and optionally loads weights from a checkpoint.
+
+        Args:
+            encoderconfig: Configuration for the encoder.
+            decoderconfig: Configuration for the decoder.
+            lossconfig: Configuration for the loss function.
+            vqconfig: Configuration for the vector quantization layer.
+            quant_before_dim (int): Number of channels before quantization.
+            quant_after_dim (int): Number of channels after quantization.
+            quant_sample_temperature (float, optional): Temperature for sampling from the quantized embeddings.
+            ckpt_path (str, optional): Path to a checkpoint file to load weights from.
+            ignore_keys (List[str], optional): List of keys to ignore when loading weights from a checkpoint.
+            image_key (str, optional): Key for the input image in the input batch dictionary.
+            entropy_patch_size (int, optional): Patch size for entropy calculation.
+            image_size (int, optional): Size of the input image.
+        """
         super().__init__()
 
         self.image_key = image_key
@@ -75,10 +78,10 @@ class DualGrainVQModel(Stage1Model):
         Encodes an input image into quantized embeddings.
 
         Args:
-            x: Input image tensor.
+            x (torch.Tensor): Input image tensor.
 
         Returns:
-            A tuple containing:
+            Tuple: A tuple containing:
                 - Quantized embeddings.
                 - Embedding loss.
                 - Information dictionary from the quantization layer.
@@ -104,11 +107,10 @@ class DualGrainVQModel(Stage1Model):
         Decodes quantized embeddings into an image.
 
         Args:
-            quant: Quantized embeddings.
-            grain_indices: Grain indices.
+            quant (torch.Tensor): Quantized embeddings.
 
         Returns:
-            Decoded image tensor.
+            torch.Tensor: Decoded image tensor.
         """
         quant = self.post_quant_conv(quant)
         dec = self.decoder(quant)
@@ -121,10 +123,10 @@ class DualGrainVQModel(Stage1Model):
         Forward pass of the model.
 
         Args:
-            input: Input image tensor.
+            input (torch.Tensor): Input image tensor.
 
         Returns:
-            A tuple containing:
+            Tuple: A tuple containing:
                 - Decoded image tensor.
                 - Quantization loss.
                 - Grain indices.

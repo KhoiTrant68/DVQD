@@ -10,7 +10,19 @@ from src.utils.nn_modules import AttnBlock, ResnetBlock, Upsample, group_norm
 
 
 class PositionEmbedding2DLearned(nn.Module):
+    """
+    2D Learned Positional Embedding.
+    """
+
     def __init__(self, n_row, feats_dim, n_col=None):
+        """
+        Initializes the PositionEmbedding2DLearned.
+
+        Args:
+            n_row (int): Number of rows for the embedding.
+            feats_dim (int): Dimension of the feature embeddings.
+            n_col (int, optional): Number of columns for the embedding. Defaults to n_row.
+        """
         super().__init__()
         n_col = n_col or n_row
         self.row_embed = nn.Embedding(n_row, feats_dim)
@@ -18,10 +30,20 @@ class PositionEmbedding2DLearned(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
+        """Initializes the weights of the embeddings using a truncated normal distribution."""
         trunc_normal_(self.row_embed.weight)
         trunc_normal_(self.col_embed.weight)
 
     def forward(self, x):
+        """
+        Forward pass to add positional embeddings to the input.
+
+        Args:
+            x (torch.Tensor): Input tensor with shape (..., H, W).
+
+        Returns:
+            torch.Tensor: Input tensor with added positional embeddings.
+        """
         h, w = x.shape[-2:]
         device = x.device
         i = torch.arange(w, device=device)
@@ -41,6 +63,10 @@ class PositionEmbedding2DLearned(nn.Module):
 
 
 class Decoder(nn.Module):
+    """
+    Decoder module for image generation.
+    """
+
     def __init__(
         self,
         ch,
@@ -57,6 +83,23 @@ class Decoder(nn.Module):
         window_size=2,
         position_type="relative",
     ):
+        """
+        Initializes the Decoder.
+        Args:
+            ch (int): Base number of channels.
+            in_ch (int): Number of input channels.
+            out_ch (int): Number of output channels.
+            ch_mult (list): Multipliers for the number of channels at each resolution level.
+            num_res_blocks (int): Number of resnet blocks per resolution level.
+            resolution (int): Initial resolution of the input.
+            attn_resolutions (list): Resolutions at which to apply attention.
+            dropout (float, optional): Dropout rate. Defaults to 0.0.
+            resamp_with_conv (bool, optional): Whether to use convolution for resampling. Defaults to True.
+            give_pre_end (bool, optional): Whether to return intermediate features. Defaults to False.
+            latent_size (int, optional): Size of the latent space. Defaults to 32.
+            window_size (int, optional): Size of the window for relative positional embeddings. Defaults to 2.
+            position_type (str, optional): Type of positional embeddings to use. Defaults to "relative".
+        """
         super().__init__()
         self.num_resolutions = len(ch_mult)
         self.num_res_blocks = num_res_blocks
@@ -70,11 +113,6 @@ class Decoder(nn.Module):
         block_in = ch * ch_mult[self.num_resolutions - 1]
         curr_res = resolution // 2 ** (self.num_resolutions - 1)
         self.z_shape = (1, in_ch, curr_res, curr_res)
-        print(
-            "Working with z of shape {} = {} dimensions.".format(
-                self.z_shape, np.prod(self.z_shape)
-            )
-        )
 
         self.conv_in = nn.Conv2d(in_ch, block_in, kernel_size=3, stride=1, padding=1)
 
@@ -146,6 +184,14 @@ class Decoder(nn.Module):
             raise NotImplementedError()
 
     def forward(self, h):
+        """
+        Forward pass of the decoder.
+        Args:
+            h (torch.Tensor): Input tensor to the decoder.
+
+        Returns:
+            torch.Tensor: Output tensor from the decoder.
+        """
         if self.position_type in ["learned", "rope"]:
             h = self.position_bias(h)
         elif self.position_type == "learned+relative":

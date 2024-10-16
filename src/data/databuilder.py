@@ -16,6 +16,18 @@ class DataModuleFromConfig:
         num_workers=None,
         train_val=False,
     ):
+        """
+        Initialize the DataModuleFromConfig.
+
+        Args:
+            batch_size (int): The number of samples per batch to load.
+            train (dict, optional): Configuration for the training dataset.
+            val (dict, optional): Configuration for the validation dataset.
+            test (dict, optional): Configuration for the test dataset.
+            wrap (bool, optional): Whether to wrap datasets with additional functionality.
+            num_workers (int, optional): Number of subprocesses to use for data loading.
+            train_val (bool, optional): Whether to combine train and validation datasets.
+        """
         super().__init__()
         self.batch_size = batch_size
         self.train_val = train_val
@@ -31,6 +43,12 @@ class DataModuleFromConfig:
         self.datasets = self.setup_datasets()
 
     def setup_datasets(self):
+        """
+        Set up datasets based on the provided configurations.
+
+        Returns:
+            dict: A dictionary containing instantiated datasets for each split.
+        """
         datasets = {
             k: instantiate_from_config(self.dataset_configs[k])
             for k in self.dataset_configs
@@ -41,6 +59,15 @@ class DataModuleFromConfig:
         return datasets
 
     def get_dataloader(self, split):
+        """
+        Get a DataLoader for a specific dataset split.
+
+        Args:
+            split (str): The dataset split to load ('train', 'val', or 'test').
+
+        Returns:
+            DataLoader: A DataLoader instance for the specified dataset split.
+        """
         dataset = self.datasets[split]
         collate_fn = dataset.collate_fn if hasattr(dataset, "collate_fn") else None
         return DataLoader(

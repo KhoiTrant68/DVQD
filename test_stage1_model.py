@@ -4,7 +4,6 @@ import torch
 import yaml
 from omegaconf import OmegaConf
 
-sys.path.append("..")
 from src.utils.util_modules import instantiate_from_config
 
 
@@ -35,25 +34,17 @@ def test_grain_vq_model(config_path):
 
 
 # Run the test
-# test_grain_vq_model(
-#     "/home/infordio-ai/khoi/HU/DVQD/src/configs/dual_feat_imagenet.yml"
-# )
+test_grain_vq_model("./src/configs/stage1/dual_feat_imagenet.yml")
 
 
-# test_grain_vq_model(
-#     "/home/infordio-ai/khoi/HU/DVQD/src/configs/dual_dynamic_entropy_imagenet.yml"
-# )
+test_grain_vq_model("./src/configs/stage1/dual_dynamic_entropy_imagenet.yml")
 
 
-# test_grain_vq_model(
-#     "/home/infordio-ai/khoi/HU/DVQD/src/configs/dual_fixed_entropy_imagenet.yml"
-# )
+test_grain_vq_model("./src/configs/stage1/dual_fixed_entropy_imagenet.yml")
 
 
-test_grain_vq_model(
-    "/home/infordio-ai/khoi/HU/DVQD/src/configs/triple_feat_imagenet.yml"
-)
+test_grain_vq_model("./src/configs/stage1/triple_feat_imagenet.yml")
 
-test_grain_vq_model(
-    "/home/infordio-ai/khoi/HU/DVQD/src/configs/triple_fixed_entropy_imagenet.yml"
-)
+test_grain_vq_model("./src/configs/stage1/triple_fixed_entropy_imagenet.yml")
+
+test_grain_vq_model("./src/configs/stage1/triple_dynamic_entropy_imagenet.yml")

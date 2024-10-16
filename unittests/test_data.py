@@ -15,7 +15,7 @@ data_dict = {
             "target": "src.data.imagenet.ImageNetDataset",
             "params": {
                 "split": "train",
-                "data_dir": "/home/infordio-ai/khoi/HU/dataset/imagenet-mini/train",
+                "data_dir": "../dataset/imagenet-mini/train",
                 "size": 256,
                 "random_crop": True,
             },
@@ -24,7 +24,7 @@ data_dict = {
             "target": "src.data.imagenet.ImageNetDataset",
             "params": {
                 "split": "val",
-                "data_dir": "/home/infordio-ai/khoi/HU/dataset/imagenet-mini/val",
+                "data_dir": "../dataset/imagenet-mini/val",
                 "size": 256,
                 "random_crop": False,
             },

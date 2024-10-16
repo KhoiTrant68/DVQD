@@ -7,6 +7,10 @@ from src.utils.util_modules import instantiate_from_config
 
 
 class DualGrainEncoder(nn.Module):
+    """
+    Dual Grain Encoder for image processing.
+    """
+
     def __init__(
         self,
         *,
@@ -23,6 +27,21 @@ class DualGrainEncoder(nn.Module):
         update_router=True,
         **ignore_kwargs,
     ):
+        """
+        Initializes the DualGrainEncoder.
+        Args:
+            ch (int): Base number of channels.
+            ch_mult (tuple): Multipliers for the number of channels at each resolution level.
+            num_res_blocks (int): Number of resnet blocks per resolution level.
+            attn_resolutions (list): Resolutions at which to apply attention.
+            dropout (float, optional): Dropout rate. Defaults to 0.0.
+            resamp_with_conv (bool, optional): Whether to use convolution for resampling. Defaults to True.
+            in_channels (int): Number of input channels.
+            resolution (int): Initial resolution of the input.
+            z_channels (int): Number of channels in the latent space.
+            router_config (dict, optional): Configuration for the dynamic router. Defaults to None.
+            update_router (bool, optional): Whether to update the router during training. Defaults to True.
+        """
         super().__init__()
 
         self.ch = ch
@@ -106,6 +125,16 @@ class DualGrainEncoder(nn.Module):
         self.update_router = update_router
 
     def forward(self, x, x_entropy):
+        """
+        Forward pass of the encoder.
+
+        Args:
+            x (torch.Tensor): Input tensor to the encoder.
+            x_entropy (torch.Tensor): Entropy map for dynamic routing.
+
+        Returns:
+            dict: A dictionary containing the dual grain output, indices, codebook mask, and gate values.
+        """
         assert x.shape[2] == x.shape[3] == self.resolution
 
         hs, h_fine = self._downsample(x)
@@ -116,6 +145,15 @@ class DualGrainEncoder(nn.Module):
         return self._dynamic_routing(h_coarse, h_fine, x_entropy)
 
     def _downsample(self, x):
+        """
+        Downsamples the input tensor through multiple resolution levels.
+
+        Args:
+            x (torch.Tensor): Input tensor to be downsampled.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: A tuple containing the downsampled features and fine grain features.
+        """
         hs = [self.conv_in(x)]
         h_fine = None
         for i_level in range(self.num_resolutions):
@@ -131,18 +169,47 @@ class DualGrainEncoder(nn.Module):
         return hs, h_fine
 
     def _process_coarse(self, h):
+        """
+        Processes the coarse grain features.
+
+        Args:
+            h (torch.Tensor): Coarse grain features.
+
+        Returns:
+            torch.Tensor: Processed coarse grain features.
+        """
         h = self.mid_coarse(h)
         h = self.norm_out_coarse(h)
         h = F.silu(h)
         return self.conv_out_coarse(h)
 
     def _process_fine(self, h):
+        """
+        Processes the fine grain features.
+
+        Args:
+            h (torch.Tensor): Fine grain features.
+
+        Returns:
+            torch.Tensor: Processed fine grain features.
+        """
         h = self.mid_fine(h)
         h = self.norm_out_fine(h)
         h = F.silu(h)
         return self.conv_out_fine(h)
 
     def _dynamic_routing(self, h_coarse, h_fine, x_entropy):
+        """
+        Performs dynamic routing between coarse and fine grain features.
+
+        Args:
+            h_coarse (torch.Tensor): Coarse grain features.
+            h_fine (torch.Tensor): Fine grain features.
+            x_entropy (torch.Tensor): Entropy map for dynamic routing.
+
+        Returns:
+            dict: A dictionary containing the dual grain output, indices, codebook mask, and gate values.
+        """
         gate = self.router(h_fine=h_fine, h_coarse=h_coarse, entropy=x_entropy)
         print("gate", gate.shape)
         if self.update_router:

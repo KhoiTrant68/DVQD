@@ -10,25 +10,6 @@ from src.utils.util_modules import disabled_train, instantiate_from_config
 class TripleGrainVQModel(Stage1Model):
     """
     Triple Grain VQ Model with Entropy Module for image generation.
-
-    This module implements a triple grain vector quantization model with an entropy module.
-    It consists of an encoder, a decoder, a vector quantization layer, an entropy module,
-    and a discriminator for adversarial training.
-
-    Args:
-        encoderconfig: Configuration for the encoder.
-        decoderconfig: Configuration for the decoder.
-        lossconfig: Configuration for the loss function.
-        vqconfig: Configuration for the vector quantization layer.
-        entropyconfig: Configuration for the entropy module.
-        quant_before_dim: Number of channels before quantization.
-        quant_after_dim: Number of channels after quantization.
-        quant_sample_temperature: Temperature for sampling from the quantized embeddings.
-        ckpt_path: Path to a checkpoint file to load weights from.
-        ignore_keys: List of keys to ignore when loading weights from a checkpoint.
-        image_key: Key for the input image in the input batch dictionary.
-        entropy_patch_size: Patch size for entropy calculation.
-        image_size: Size of the input image.
     """
 
     def __init__(
@@ -43,9 +24,26 @@ class TripleGrainVQModel(Stage1Model):
         ckpt_path: str = None,
         ignore_keys: List[str] = [],
         image_key: str = "image",
-        entropy_patch_size: int = 16,
+        entropy_patch_size: int = 32,
         image_size: int = 256,
     ):
+        """
+        Initializes the TripleGrainVQModel.
+
+        Args:
+            encoderconfig: Configuration for the encoder.
+            decoderconfig: Configuration for the decoder.
+            lossconfig: Configuration for the loss function.
+            vqconfig: Configuration for the vector quantization layer.
+            quant_before_dim: Number of channels before quantization.
+            quant_after_dim: Number of channels after quantization.
+            quant_sample_temperature: Temperature for sampling from the quantized embeddings.
+            ckpt_path: Path to a checkpoint file to load weights from.
+            ignore_keys: List of keys to ignore when loading weights from a checkpoint.
+            image_key: Key for the input image in the input batch dictionary.
+            entropy_patch_size: Patch size for entropy calculation.
+            image_size: Size of the input image.
+        """
         super().__init__()
 
         self.image_key = image_key
@@ -88,7 +86,6 @@ class TripleGrainVQModel(Stage1Model):
                 - Entropy map.
         """
         x_entropy = self.entropy_calculation(x)
-        print("x_entropy", x_entropy.shape)
         h_dict = self.encoder(x, x_entropy)
         h = h_dict["h_triple"]
         grain_indices = h_dict["indices"]

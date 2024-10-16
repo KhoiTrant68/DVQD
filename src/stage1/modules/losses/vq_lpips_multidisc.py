@@ -47,6 +47,10 @@ def bce_gen_loss(logits_fake):
 
 
 class VQLPIPSWithDiscriminator(nn.Module):
+    """
+    A class that combines VQ, LPIPS, and a discriminator for training.
+    """
+
     def __init__(
         self,
         disc_start,
@@ -58,17 +62,34 @@ class VQLPIPSWithDiscriminator(nn.Module):
         disc_weight=1.0,
         perceptual_weight=1.0,
         disc_conditional=False,
-        disc_adaptive_loss=True,  # use adaptive weight or fixed
+        disc_adaptive_loss=True,
         disc_loss="hinge",
         disc_weight_max=None,
         budget_loss_config=None,
     ):
+        """
+        Initializes the VQLPIPSWithDiscriminator class.
+
+        Parameters:
+        - disc_start (int): The step to start using the discriminator.
+        - disc_config (dict): Configuration for the discriminator.
+        - disc_init (bool): Whether to initialize the discriminator.
+        - codebook_weight (float, optional): The weight for the codebook loss. Defaults to 1.0.
+        - pixelloss_weight (float, optional): The weight for the pixel loss. Defaults to 1.0.
+        - disc_factor (float, optional): The factor for the discriminator loss. Defaults to 1.0.
+        - disc_weight (float, optional): The weight for the discriminator. Defaults to 1.0.
+        - perceptual_weight (float, optional): The weight for the perceptual loss. Defaults to 1.0.
+        - disc_conditional (bool, optional): Whether the discriminator is conditional. Defaults to False.
+        - disc_adaptive_loss (bool, optional): Whether to use adaptive loss for the discriminator. Defaults to True.
+        - disc_loss (str, optional): The type of discriminator loss. Defaults to "hinge".
+        - disc_weight_max (float or None, optional): The maximum weight for the discriminator. Defaults to None.
+        - budget_loss_config (dict or None, optional): Configuration for budget loss. Defaults to None.
+        """
         super().__init__()
         assert disc_loss in ["hinge", "vanilla", "bce"]
         self.codebook_weight = codebook_weight
         self.pixel_weight = pixelloss_weight
 
-        # Use the lpips library for perceptual loss (VGG is default)
         self.perceptual_loss = lpips.LPIPS(net="vgg").eval()
         self.perceptual_weight = perceptual_weight
 
@@ -88,7 +109,6 @@ class VQLPIPSWithDiscriminator(nn.Module):
             self.gen_loss = bce_gen_loss
         else:
             raise ValueError(f"Unknown GAN loss '{disc_loss}'.")
-        print(f"VQLPIPSWithDiscriminator running with {disc_loss} loss.")
         self.disc_factor = disc_factor
         self.discriminator_weight = disc_weight
         self.disc_conditional = disc_conditional
@@ -100,6 +120,17 @@ class VQLPIPSWithDiscriminator(nn.Module):
             self.budget_loss = instantiate_from_config(budget_loss_config)
 
     def calculate_adaptive_weight(self, nll_loss, g_loss, last_layer=None):
+        """
+        Calculates the adaptive weight for the discriminator loss.
+
+        Parameters:
+        - nll_loss (Tensor): The negative log-likelihood loss.
+        - g_loss (Tensor): The generator loss.
+        - last_layer (Tensor or None, optional): The last layer of the model. Defaults to None.
+
+        Returns:
+        - Tensor: The adaptive weight for the discriminator loss.
+        """
         if last_layer is not None:
             nll_grads = torch.autograd.grad(nll_loss, last_layer, retain_graph=True)[0]
             g_grads = torch.autograd.grad(g_loss, last_layer, retain_graph=True)[0]
@@ -128,6 +159,23 @@ class VQLPIPSWithDiscriminator(nn.Module):
         split="train",
         gate=None,
     ):
+        """
+        Forward pass for the VQLPIPSWithDiscriminator model.
+
+        Parameters:
+        - codebook_loss (Tensor): The codebook loss.
+        - inputs (Tensor): The input data.
+        - reconstructions (Tensor): The reconstructed data.
+        - optimizer_idx (int): The index of the optimizer (0 for generator, 1 for discriminator).
+        - global_step (int): The current global step.
+        - last_layer (Tensor or None, optional): The last layer of the model. Defaults to None.
+        - cond (Tensor or None, optional): Conditional data for the discriminator. Defaults to None.
+        - split (str, optional): The data split (e.g., "train", "val"). Defaults to "train".
+        - gate (Tensor or None, optional): The gate for budget loss. Defaults to None.
+
+        Returns:
+        - Tuple[Tensor, dict]: The loss and a dictionary of logs.
+        """
         # Reconstruction loss (pixel-level)
         rec_loss = torch.abs(inputs.contiguous() - reconstructions.contiguous())
 

@@ -4,7 +4,19 @@ from src.utils.nn_modules import ActNorm, weights_init
 
 
 class NLayerDiscriminator(nn.Module):
+    """
+    N-Layer Discriminator for adversarial networks.
+    """
+
     def __init__(self, input_nc=3, ndf=64, n_layers=3, use_actnorm=False):
+        """
+        Initializes the NLayerDiscriminator.
+        Args:
+            input_nc (int): Number of input channels.
+            ndf (int): Number of filters in the last convolutional layer.
+            n_layers (int): Number of convolutional layers.
+            use_actnorm (bool): Whether to use activation normalization.
+        """
         super().__init__()
         norm_layer = ActNorm if use_actnorm else nn.BatchNorm2d
         use_bias = use_actnorm or norm_layer != nn.BatchNorm2d
@@ -36,4 +48,13 @@ class NLayerDiscriminator(nn.Module):
         self.apply(weights_init)
 
     def forward(self, input):
+        """
+        Forward pass of the discriminator.
+
+        Args:
+            input (torch.Tensor): Input tensor to the discriminator.
+
+        Returns:
+            torch.Tensor: Output tensor representing the authenticity score.
+        """
         return self.main(input)

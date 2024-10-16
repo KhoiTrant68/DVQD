@@ -1,23 +1,24 @@
 model:
-  target: src.stage1.models.dual_entropy_model.DualGrainVQModel
+  base_learning_rate: 4.5e-06
+  target: src.stage1.models.triple_feat_model.TripleGrainVQModel
   params:
     encoderconfig:
-      target: src.stage1.modules.dynamic_modules.encoder_dual.DualGrainEncoder
+      target: src.stage1.modules.dynamic_modules.encoder_triple.TripleGrainEncoder
       params:
         ch: 128
-        ch_mult: [1, 1, 2, 2, 4]
+        ch_mult: [1, 1, 2, 2, 4, 4]
         num_res_blocks: 2
-        attn_resolutions: [16, 32]
+        attn_resolutions: [8, 16, 32]
         dropout: 0.0
         resamp_with_conv: true
         in_channels: 3
         resolution: 256
         z_channels: 256
         router_config:
-          target: src.stage1.modules.dynamic_modules.router_dual.DualGrainFixedEntropyRouter
+          target: src.stage1.modules.dynamic_modules.router_triple.TripleGrainFeatureRouter
           params:
-            json_path: /home/infordio-ai/khoi/HU/DVQD/src/stage1/threshold/thresholds/entropy_thresholds_imagenet_train_patch-16.json
-            fine_grain_ratito: 0.5
+            num_channels: 256
+            num_groups: 32
     decoderconfig:
       target: src.stage1.modules.dynamic_modules.decoder.Decoder
       params:
@@ -52,13 +53,14 @@ model:
         disc_loss: hinge
         disc_weight_max: 0.75
         budget_loss_config:
-          target: src.stage1.modules.dynamic_modules.budget.BudgetConstraint_RatioMSE_DualGrain
+          target: src.stage1.modules.dynamic_modules.budget.BudgetConstraint_NormedSeperateRatioMSE_TripleGrain
           params:
-            target_ratio: 0.5
+            target_fine_ratio: 0.66
+            target_median_ratio: 0.33
             gamma: 10.0
-            min_grain_size: 16
+            min_grain_size: 8
+            median_grain_size: 16
             max_grain_size: 32
-            calculate_all: True
     vqconfig:
       target: src.stage1.modules.vector_quantization.masked_vq.MaskVectorQuantize
       params:
@@ -72,11 +74,11 @@ model:
     quant_before_dim: 256
     quant_after_dim: 256
     quant_sample_temperature: 0.0
-    image_key: input
+    image_key: image
 
 scheduler:
   base_learning_rate: 4.5e-06
-  warmup_epochs: 0
+  warmup_epochs: 5
   warmup_epochs_ratio: 0.1
   scheduler_type: linear-warmup_cosine-decay
 
@@ -85,20 +87,20 @@ data:
   params:
     batch_size: 2
     num_workers: 4
-    train_val: False,
+    train_val: False
     train:
       target: src.data.imagenet.ImageNetDataset
       params:
         split: train
         config:
-          data_dir": /home/infordio-ai/khoi/HU/dataset/imagenet-mini/train,
-          size: 256,
-          random_crop: True,
+          data_dir: ../dataset/imagenet-mini/train
+          size: 256
+          random_crop: True
     val:
       target: src.data.imagenet.ImageNetDataset
       params:
         split: val
         config:
-          data_dir": /home/infordio-ai/khoi/HU/dataset/imagenet-mini/val,
-          size: 256,
-          random_crop: False,
+          data_dir: ../dataset/imagenet-mini/val
+          size: 256
+          random_crop: False

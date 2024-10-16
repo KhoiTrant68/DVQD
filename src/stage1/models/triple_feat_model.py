@@ -9,21 +9,6 @@ from src.utils.util_modules import instantiate_from_config
 class TripleGrainVQModel(Stage1Model):
     """
     Triple Grain VQ Model for image generation.
-
-    This module implements a triple grain vector quantization model. It consists of an encoder,
-    a decoder, a vector quantization layer, and a discriminator for adversarial training.
-
-    Args:
-        encoderconfig: Configuration for the encoder.
-        decoderconfig: Configuration for the decoder.
-        lossconfig: Configuration for the loss function.
-        vqconfig: Configuration for the vector quantization layer.
-        quant_before_dim: Number of channels before quantization.
-        quant_after_dim: Number of channels after quantization.
-        quant_sample_temperature: Temperature for sampling from the quantized embeddings.
-        ckpt_path: Path to a checkpoint file to load weights from.
-        ignore_keys: List of keys to ignore when loading weights from a checkpoint.
-        image_key: Key for the input image in the input batch dictionary.
     """
 
     def __init__(
@@ -39,6 +24,21 @@ class TripleGrainVQModel(Stage1Model):
         ignore_keys: List[str] = [],
         image_key: str = "image",
     ):
+        """
+        Initializes the TripleGrainVQModel.
+
+        Args:
+            encoderconfig: Configuration for the encoder.
+            decoderconfig: Configuration for the decoder.
+            lossconfig: Configuration for the loss function.
+            vqconfig: Configuration for the vector quantization layer.
+            quant_before_dim: Number of channels before quantization.
+            quant_after_dim: Number of channels after quantization.
+            quant_sample_temperature: Temperature for sampling from the quantized embeddings.
+            ckpt_path: Path to a checkpoint file to load weights from.
+            ignore_keys: List of keys to ignore when loading weights from a checkpoint.
+            image_key: Key for the input image in the input batch dictionary.
+        """
         super().__init__()
 
         self.image_key = image_key
