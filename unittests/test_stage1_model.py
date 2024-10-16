@@ -50,9 +50,9 @@ def test_grain_vq_model(config_path):
 # )
 
 
-# test_grain_vq_model(
-#     "/home/infordio-ai/khoi/HU/DVQD/src/configs/triple_feat_imagenet.yml"
-# )
+test_grain_vq_model(
+    "/home/infordio-ai/khoi/HU/DVQD/src/configs/triple_feat_imagenet.yml"
+)
 
 test_grain_vq_model(
     "/home/infordio-ai/khoi/HU/DVQD/src/configs/triple_fixed_entropy_imagenet.yml"

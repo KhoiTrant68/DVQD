@@ -1,5 +1,5 @@
 model:
-  target: src.stage1.models.triple_feat_model.TripleGrainVQModel
+  target: src.stage1.models.triple_entropy_model.TripleGrainVQModel
   params:
     encoderconfig:
       target: src.stage1.modules.dynamic_modules.encoder_triple.TripleGrainEncoder
@@ -14,7 +14,7 @@ model:
         resolution: 256
         z_channels: 256
         router_config:
-          target:  src.stage1.modules.dynamic_modules.router_triple.TripleGrainFixedEntropyRouter
+          target: src.stage1.modules.dynamic_modules.router_triple.TripleGrainFixedEntropyRouter
           params:
             json_path: /home/infordio-ai/khoi/HU/DVQD/src/stage1/threshold/thresholds/entropy_thresholds_imagenet_train_patch-16.json
             median_grain_ratio: 0.01

@@ -106,9 +106,7 @@ class DualGrainEncoder(nn.Module):
         self.update_router = update_router
 
     def forward(self, x, x_entropy):
-        assert (
-            x.shape[2] == x.shape[3] == self.resolution
-        ), f"{x.shape[2]}, {x.shape[3]}, {self.resolution}"
+        assert x.shape[2] == x.shape[3] == self.resolution
 
         hs, h_fine = self._downsample(x)
         h_coarse = hs[-1]

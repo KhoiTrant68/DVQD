@@ -88,6 +88,7 @@ class TripleGrainVQModel(Stage1Model):
                 - Entropy map.
         """
         x_entropy = self.entropy_calculation(x)
+        print("x_entropy", x_entropy.shape)
         h_dict = self.encoder(x, x_entropy)
         h = h_dict["h_triple"]
         grain_indices = h_dict["indices"]

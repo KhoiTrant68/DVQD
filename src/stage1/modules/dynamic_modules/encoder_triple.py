@@ -30,7 +30,6 @@ class TripleGrainEncoder(nn.Module):
         self.num_res_blocks = num_res_blocks
         self.resolution = resolution
         self.in_channels = in_channels
-        self.update_router = update_router
 
         self.conv_in = nn.Conv2d(
             in_channels, self.ch, kernel_size=3, stride=1, padding=1
@@ -83,6 +82,7 @@ class TripleGrainEncoder(nn.Module):
         self.fine_branch = _make_grain_branch(block_in_fine)
 
         self.router = instantiate_from_config(router_config)
+        self.update_router = update_router
 
     def forward(self, x, x_entropy):
         assert x.shape[2] == x.shape[3] == self.resolution
@@ -115,37 +115,42 @@ class TripleGrainEncoder(nn.Module):
         return hs, h_fine, h_median
 
     def _dynamic_routing(self, h_coarse, h_median, h_fine, x_entropy):
+
         gate = self.router(
             h_fine=h_fine, h_median=h_median, h_coarse=h_coarse, entropy=x_entropy
         )
-        if self.update_router and self.training:
+        if self.training:
+            gate = gate.float()
             gate = F.gumbel_softmax(gate, tau=1, dim=-1, hard=True)
-
         gate = gate.permute(0, 3, 1, 2)
         indices = gate.argmax(dim=1)
 
-        h_coarse = h_coarse.repeat_interleave(4, dim=-1).repeat_interleave(4, dim=-2)
-        h_median = h_median.repeat_interleave(2, dim=-1).repeat_interleave(2, dim=-2)
-        indices_repeat = (
-            indices.repeat_interleave(4, dim=-1)
-            .repeat_interleave(4, dim=-2)
-            .unsqueeze(1)
-        )
+        # Upsample the outputs to the finest resolution
+        h_coarse = F.interpolate(h_coarse, scale_factor=4, mode="nearest")
+        h_median = F.interpolate(h_median, scale_factor=2, mode="nearest")
 
+        # Resize indices_repeat to match the spatial resolution of h_coarse, h_median, and h_fine
+        indices_repeat = F.interpolate(
+            indices.unsqueeze(1).float(), size=(32, 32), mode="nearest"
+        ).long()
+
+        # Combine the outputs based on the router's selection
         h_triple = torch.where(indices_repeat == 0, h_coarse, h_median)
         h_triple = torch.where(indices_repeat == 1, h_median, h_triple)
         h_triple = torch.where(indices_repeat == 2, h_fine, h_triple)
 
-        if self.update_router and self.training:
+        # Apply gradient scaling during training based on the router's output
+        if self.training:
             gate_grad = gate.max(dim=1, keepdim=True)[0]
-            gate_grad = gate_grad.repeat_interleave(4, dim=-1).repeat_interleave(
-                4, dim=-2
-            )
+            gate_grad = F.interpolate(
+                gate_grad, size=(32, 32), mode="nearest"
+            )  # Resize gate_grad
             h_triple = h_triple * gate_grad
 
-        coarse_mask = 0.0625 * torch.ones_like(indices_repeat, device=h_triple.device)
-        median_mask = 0.25 * torch.ones_like(indices_repeat, device=h_triple.device)
-        fine_mask = 1.0 * torch.ones_like(indices_repeat, device=h_triple.device)
+        # Create a mask indicating the codebook scale for each region
+        coarse_mask = 0.0625 * torch.ones_like(indices_repeat).to(h_triple.device)
+        median_mask = 0.25 * torch.ones_like(indices_repeat).to(h_triple.device)
+        fine_mask = 1.0 * torch.ones_like(indices_repeat).to(h_triple.device)
         codebook_mask = torch.where(indices_repeat == 0, coarse_mask, median_mask)
         codebook_mask = torch.where(indices_repeat == 1, median_mask, codebook_mask)
         codebook_mask = torch.where(indices_repeat == 2, fine_mask, codebook_mask)

@@ -1,5 +1,8 @@
+import sys
+
 import torch
 
+sys.path.append("..")
 from src.stage1.modules.dynamic_modules.encoder_dual import DualGrainEncoder
 from src.stage1.modules.dynamic_modules.encoder_triple import \
     TripleGrainEncoder
