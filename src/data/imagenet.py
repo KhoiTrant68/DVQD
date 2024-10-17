@@ -91,5 +91,5 @@ class ImageNetDataset(BaseDataset):
             glob(os.path.join(data_dir, "**", "*.JPEG"), recursive=True)
         )
         super().__init__(
-            split=split, paths=image_paths, size=size, random_crop=random_crop
+            split=split, paths=image_paths[:50], size=size, random_crop=random_crop
         )
