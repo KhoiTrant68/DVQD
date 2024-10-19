@@ -74,7 +74,7 @@ model:
     quant_before_dim: 256
     quant_after_dim: 256
     quant_sample_temperature: 0.0
-    image_key: image
+    image_key: input
 
 scheduler:
   base_learning_rate: 4.5e-06
@@ -92,15 +92,13 @@ data:
       target: src.data.imagenet.ImageNetDataset
       params:
         split: train
-        config:
-          data_dir: ../dataset/imagenet-mini/train
-          size: 256
-          random_crop: True
+        data_dir: ../dataset/imagenet-mini/train
+        size: 256
+        random_crop: True
     val:
       target: src.data.imagenet.ImageNetDataset
       params:
         split: val
-        config:
-          data_dir: ../dataset/imagenet-mini/val
-          size: 256
-          random_crop: False
+        data_dir: ../dataset/imagenet-mini/val
+        size: 256
+        random_crop: False

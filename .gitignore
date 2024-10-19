@@ -163,3 +163,7 @@ cython_debug/
 
 .vscode/
 .pytest_cache/
+
+output/
+logging/
+wandb/
