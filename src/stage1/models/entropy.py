@@ -5,8 +5,8 @@ from torch import Tensor, nn
 
 class Entropy(nn.Module):
     def __init__(self, patch_size, image_width, image_height):
-        """
-        Initializes the Entropy module with the given patch size and image dimensions.
+        """Initializes the Entropy module with the given patch size and image
+        dimensions.
 
         Args:
             patch_size (int): The size of each patch.
@@ -27,8 +27,8 @@ class Entropy(nn.Module):
         self.register_buffer("sigma", torch.tensor(0.01))
 
     def entropy(self, values: torch.Tensor, batch_size: int) -> torch.Tensor:
-        """
-        Computes the entropy of the given values using kernel density estimation.
+        """Computes the entropy of the given values using kernel density
+        estimation.
 
         Args:
             values (torch.Tensor): The input tensor containing image patches.
@@ -50,8 +50,7 @@ class Entropy(nn.Module):
         return entropy.view(batch_size, self.hw, self.hw)
 
     def forward(self, inputs: Tensor) -> torch.Tensor:
-        """
-        Forward pass to compute the entropy of image patches.
+        """Forward pass to compute the entropy of image patches.
 
         Args:
             inputs (Tensor): The input image tensor with shape (batch_size, channels, height, width).

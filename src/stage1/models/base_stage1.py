@@ -17,7 +17,8 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
     """
 
     def __init__(self):
-        """Initialize the Stage1Model with encoder, decoder, and quantization modules."""
+        """Initialize the Stage1Model with encoder, decoder, and quantization
+        modules."""
         super().__init__()
         self.encoder = None
         self.decoder = None
@@ -25,8 +26,7 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def encode(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Generate the encoded codebook from the input.
+        """Generate the encoded codebook from the input.
 
         Args:
             x (torch.Tensor): Input tensor.
@@ -38,8 +38,7 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def decode(self, z: torch.Tensor) -> torch.Tensor:
-        """
-        Generate the decoded image from the given code.
+        """Generate the decoded image from the given code.
 
         Args:
             z (torch.Tensor): Code tensor.
@@ -50,8 +49,7 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
         pass
 
     def init_from_ckpt(self, path: str, ignore_keys: list = None) -> None:
-        """
-        Initialize model from a checkpoint file.
+        """Initialize model from a checkpoint file.
 
         Args:
             path (str): Path to the checkpoint file.
@@ -71,8 +69,7 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
         print(f"Restored from {path}")
 
     def get_input(self, batch: Dict, k: str) -> torch.Tensor:
-        """
-        Get input tensor from a batch dictionary.
+        """Get input tensor from a batch dictionary.
 
         Args:
             batch (Dict): Batch dictionary containing input data.
@@ -97,8 +94,7 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
         optimizer_idx: int,
         gate: torch.Tensor = None,
     ) -> Tuple[torch.Tensor, dict]:
-        """
-        Calculate the loss for either autoencoder or discriminator.
+        """Calculate the loss for either autoencoder or discriminator.
 
         Args:
             x (torch.Tensor): Input image tensor.
@@ -128,8 +124,7 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
         return loss, log_dict
 
     def get_last_layer(self) -> torch.Tensor:
-        """
-        Return the weights of the last layer of the decoder.
+        """Return the weights of the last layer of the decoder.
 
         Returns:
             torch.Tensor: Weights of the last decoder layer.
@@ -142,8 +137,7 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
     def log_images(
         self, device, mode: str, batch: dict, **kwargs
     ) -> Dict[str, torch.Tensor]:
-        """
-        Log input images, reconstructions, grain maps, and entropy maps.
+        """Log input images, reconstructions, grain maps, and entropy maps.
 
         Args:
             device: Device to which tensors are moved.
@@ -180,8 +174,7 @@ class Stage1Model(nn.Module, metaclass=abc.ABCMeta):
     def get_code_emb_with_depth(
         self, code: torch.Tensor, mode="entropy"
     ) -> torch.Tensor:
-        """
-        Retrieve codebook embeddings for given codes.
+        """Retrieve codebook embeddings for given codes.
 
         Args:
             code (torch.Tensor): Code tensor.

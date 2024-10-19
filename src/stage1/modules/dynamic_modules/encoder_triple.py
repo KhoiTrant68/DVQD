@@ -7,9 +7,7 @@ from src.utils.util_modules import instantiate_from_config
 
 
 class TripleGrainEncoder(nn.Module):
-    """
-    Triple Grain Encoder for image processing.
-    """
+    """Triple Grain Encoder for image processing."""
 
     def __init__(
         self,
@@ -27,8 +25,8 @@ class TripleGrainEncoder(nn.Module):
         update_router=True,
         **ignore_kwargs,
     ):
-        """
-        Initializes the TripleGrainEncoder.
+        """Initializes the TripleGrainEncoder.
+
         Args:
             ch (int): Base number of channels.
             ch_mult (tuple): Multipliers for the number of channels at each resolution level.
@@ -116,8 +114,7 @@ class TripleGrainEncoder(nn.Module):
         return self._dynamic_routing(h_coarse, h_median, h_fine, x_entropy)
 
     def _downsample(self, x):
-        """
-        Downsamples the input tensor through multiple resolution levels.
+        """Downsamples the input tensor through multiple resolution levels.
 
         Args:
             x (torch.Tensor): Input tensor to be downsampled.
@@ -144,8 +141,8 @@ class TripleGrainEncoder(nn.Module):
         return hs, h_fine, h_median
 
     def _dynamic_routing(self, h_coarse, h_median, h_fine, x_entropy):
-        """
-        Performs dynamic routing between coarse, median, and fine grain features.
+        """Performs dynamic routing between coarse, median, and fine grain
+        features.
 
         Args:
             h_coarse (torch.Tensor): Coarse grain features.

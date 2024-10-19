@@ -4,13 +4,11 @@ from src.utils.nn_modules import ActNorm, weights_init
 
 
 class NLayerDiscriminator(nn.Module):
-    """
-    N-Layer Discriminator for adversarial networks.
-    """
+    """N-Layer Discriminator for adversarial networks."""
 
     def __init__(self, input_nc=3, ndf=64, n_layers=3, use_actnorm=False):
-        """
-        Initializes the NLayerDiscriminator.
+        """Initializes the NLayerDiscriminator.
+
         Args:
             input_nc (int): Number of input channels.
             ndf (int): Number of filters in the last convolutional layer.
@@ -48,8 +46,7 @@ class NLayerDiscriminator(nn.Module):
         self.apply(weights_init)
 
     def forward(self, input):
-        """
-        Forward pass of the discriminator.
+        """Forward pass of the discriminator.
 
         Args:
             input (torch.Tensor): Input tensor to the discriminator.

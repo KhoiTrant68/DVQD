@@ -47,9 +47,7 @@ def bce_gen_loss(logits_fake):
 
 
 class VQLPIPSWithDiscriminator(nn.Module):
-    """
-    A class that combines VQ, LPIPS, and a discriminator for training.
-    """
+    """A class that combines VQ, LPIPS, and a discriminator for training."""
 
     def __init__(
         self,
@@ -67,8 +65,7 @@ class VQLPIPSWithDiscriminator(nn.Module):
         disc_weight_max=None,
         budget_loss_config=None,
     ):
-        """
-        Initializes the VQLPIPSWithDiscriminator class.
+        """Initializes the VQLPIPSWithDiscriminator class.
 
         Parameters:
         - disc_start (int): The step to start using the discriminator.
@@ -120,8 +117,7 @@ class VQLPIPSWithDiscriminator(nn.Module):
             self.budget_loss = instantiate_from_config(budget_loss_config)
 
     def calculate_adaptive_weight(self, nll_loss, g_loss, last_layer=None):
-        """
-        Calculates the adaptive weight for the discriminator loss.
+        """Calculates the adaptive weight for the discriminator loss.
 
         Parameters:
         - nll_loss (Tensor): The negative log-likelihood loss.
@@ -159,8 +155,7 @@ class VQLPIPSWithDiscriminator(nn.Module):
         split="train",
         gate=None,
     ):
-        """
-        Forward pass for the VQLPIPSWithDiscriminator model.
+        """Forward pass for the VQLPIPSWithDiscriminator model.
 
         Parameters:
         - codebook_loss (Tensor): The codebook loss.

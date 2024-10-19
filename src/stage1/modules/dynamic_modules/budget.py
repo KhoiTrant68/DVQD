@@ -11,8 +11,7 @@ class BudgetConstraint_RatioMSE_DualGrain(nn.Module):
         max_grain_size=16,
         calculate_all=True,
     ):
-        """
-        Initializes the BudgetConstraint_RatioMSE_DualGrain.
+        """Initializes the BudgetConstraint_RatioMSE_DualGrain.
 
         Args:
             target_ratio (float): Desired target ratio for the budget.
@@ -31,8 +30,7 @@ class BudgetConstraint_RatioMSE_DualGrain(nn.Module):
         self.max_const = max_grain_size**2 - self.const
 
     def forward(self, gate):
-        """
-        Forward pass to calculate the budget constraint loss.
+        """Forward pass to calculate the budget constraint loss.
 
         Args:
             gate (torch.Tensor): Input tensor representing the gate values.
@@ -57,9 +55,7 @@ class BudgetConstraint_RatioMSE_DualGrain(nn.Module):
 
 
 class BudgetConstraint_NormedSeperateRatioMSE_TripleGrain(nn.Module):
-    """
-    Budget Constraint with Normed Separate Ratio MSE for Triple Grain.
-    """
+    """Budget Constraint with Normed Separate Ratio MSE for Triple Grain."""
 
     def __init__(
         self,
@@ -70,8 +66,8 @@ class BudgetConstraint_NormedSeperateRatioMSE_TripleGrain(nn.Module):
         median_grain_size=16,
         max_grain_size=32,
     ):
-        """
-        Initializes the BudgetConstraint_NormedSeperateRatioMSE_TripleGrain.
+        """Initializes the BudgetConstraint_NormedSeperateRatioMSE_TripleGrain.
+
         Args:
             target_fine_ratio (float): Desired target fine ratio for the budget.
             target_median_ratio (float): Desired target median ratio for the budget.
@@ -92,8 +88,7 @@ class BudgetConstraint_NormedSeperateRatioMSE_TripleGrain(nn.Module):
         self.max_const = max_grain_size**2 - self.min_const
 
     def forward(self, gate):
-        """
-        Forward pass to calculate the budget constraint loss.
+        """Forward pass to calculate the budget constraint loss.
 
         Args:
             gate (torch.Tensor): Input tensor representing the gate values.

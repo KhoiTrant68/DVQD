@@ -6,13 +6,10 @@ import torch.nn as nn
 
 
 class DualGrainFeatureRouter(nn.Module):
-    """
-    Dual Grain Feature Router for dynamic feature selection.
-    """
+    """Dual Grain Feature Router for dynamic feature selection."""
 
     def __init__(self, num_channels, num_groups=None):
-        """
-        Initializes the DualGrainFeatureRouter.
+        """Initializes the DualGrainFeatureRouter.
 
         This constructor sets up the pooling, gating, and normalization layers for the router.
 
@@ -46,8 +43,7 @@ class DualGrainFeatureRouter(nn.Module):
         )
 
     def forward(self, h_coarse, h_fine, entropy=None):
-        """
-        Forward pass to compute gate values for feature selection.
+        """Forward pass to compute gate values for feature selection.
 
         Args:
             h_coarse (torch.Tensor): Coarse grain features.
@@ -67,16 +63,11 @@ class DualGrainFeatureRouter(nn.Module):
 
 
 class DualGrainEntropyRouter(nn.Module):
-    """
-    Dual Grain Entropy Router for threshold-based feature selection.
-    Args:
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
-    """
+    """Dual Grain Entropy Router for threshold-based feature selection."""
 
     def __init__(self, *args, **kwargs):
-        """
-        Initializes the DualGrainEntropyRouter.
+        """Initializes the DualGrainEntropyRouter.
+
         Args:
             *args: Variable length argument list.
             **kwargs: Arbitrary keyword arguments.
@@ -100,8 +91,8 @@ class DualGrainEntropyRouter(nn.Module):
 
 
 class DualGrainFixedEntropyRouter(DualGrainEntropyRouter):
-    """
-    Dual Grain Fixed Entropy Router for static threshold-based feature selection.
+    """Dual Grain Fixed Entropy Router for static threshold-based feature
+    selection.
 
     Args:
         json_path (str): Path to the JSON file containing threshold values.
@@ -109,8 +100,8 @@ class DualGrainFixedEntropyRouter(DualGrainEntropyRouter):
     """
 
     def __init__(self, json_path, fine_grain_ratito):
-        """
-        Initializes the DualGrainFixedEntropyRouter.
+        """Initializes the DualGrainFixedEntropyRouter.
+
         Args:
             json_path (str): Path to the JSON file containing threshold values.
             fine_grain_ratito (float): Ratio for fine grain feature selection.
@@ -136,13 +127,12 @@ class DualGrainFixedEntropyRouter(DualGrainEntropyRouter):
 
 
 class DualGrainDynamicEntropyRouter(DualGrainEntropyRouter):
-    """
-    Dual Grain Dynamic Entropy Router for adaptive threshold-based feature selection.
-    """
+    """Dual Grain Dynamic Entropy Router for adaptive threshold-based feature
+    selection."""
 
     def __init__(self, fine_grain_ratio_min=0.01, fine_grain_ratio_max=0.99):
-        """
-        Initializes the DualGrainDynamicEntropyRouter.
+        """Initializes the DualGrainDynamicEntropyRouter.
+
         Args:
             fine_grain_ratio_min (float, optional): Minimum ratio for fine grain feature selection. Defaults to 0.01.
             fine_grain_ratio_max (float, optional): Maximum ratio for fine grain feature selection. Defaults to 0.99.
@@ -152,8 +142,8 @@ class DualGrainDynamicEntropyRouter(DualGrainEntropyRouter):
         self.fine_grain_ratio_max = fine_grain_ratio_max
 
     def forward(self, h_coarse, h_fine, entropy=None):
-        """
-        Forward pass to compute gate values using a dynamic entropy threshold.
+        """Forward pass to compute gate values using a dynamic entropy
+        threshold.
 
         Args:
             h_coarse (torch.Tensor): Coarse grain features.

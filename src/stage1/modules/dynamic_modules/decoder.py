@@ -10,13 +10,10 @@ from src.utils.nn_modules import AttnBlock, ResnetBlock, Upsample, group_norm
 
 
 class PositionEmbedding2DLearned(nn.Module):
-    """
-    2D Learned Positional Embedding.
-    """
+    """2D Learned Positional Embedding."""
 
     def __init__(self, n_row, feats_dim, n_col=None):
-        """
-        Initializes the PositionEmbedding2DLearned.
+        """Initializes the PositionEmbedding2DLearned.
 
         Args:
             n_row (int): Number of rows for the embedding.
@@ -30,13 +27,13 @@ class PositionEmbedding2DLearned(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        """Initializes the weights of the embeddings using a truncated normal distribution."""
+        """Initializes the weights of the embeddings using a truncated normal
+        distribution."""
         trunc_normal_(self.row_embed.weight)
         trunc_normal_(self.col_embed.weight)
 
     def forward(self, x):
-        """
-        Forward pass to add positional embeddings to the input.
+        """Forward pass to add positional embeddings to the input.
 
         Args:
             x (torch.Tensor): Input tensor with shape (..., H, W).
@@ -63,9 +60,7 @@ class PositionEmbedding2DLearned(nn.Module):
 
 
 class Decoder(nn.Module):
-    """
-    Decoder module for image generation.
-    """
+    """Decoder module for image generation."""
 
     def __init__(
         self,
@@ -83,8 +78,8 @@ class Decoder(nn.Module):
         window_size=2,
         position_type="relative",
     ):
-        """
-        Initializes the Decoder.
+        """Initializes the Decoder.
+
         Args:
             ch (int): Base number of channels.
             in_ch (int): Number of input channels.

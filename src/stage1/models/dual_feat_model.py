@@ -7,9 +7,7 @@ from src.utils.util_modules import instantiate_from_config
 
 
 class DualGrainVQModel(Stage1Model):
-    """
-    Dual Grain VQ Model for image generation.
-    """
+    """Dual Grain VQ Model for image generation."""
 
     def __init__(
         self,
@@ -24,8 +22,7 @@ class DualGrainVQModel(Stage1Model):
         ignore_keys: List[str] = [],
         image_key: str = "image",
     ):
-        """
-        Initializes the DualGrainVQModel with the given configurations.
+        """Initializes the DualGrainVQModel with the given configurations.
 
         Args:
             encoderconfig: Configuration for the encoder.
@@ -57,8 +54,7 @@ class DualGrainVQModel(Stage1Model):
     def encode(
         self, x: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor, dict, torch.Tensor, torch.Tensor]:
-        """
-        Encodes an input image into quantized embeddings.
+        """Encodes an input image into quantized embeddings.
 
         Args:
             x: Input image tensor.
@@ -84,8 +80,7 @@ class DualGrainVQModel(Stage1Model):
         return quant, emb_loss, info, grain_indices, gate
 
     def decode(self, quant: torch.Tensor) -> torch.Tensor:
-        """
-        Decodes quantized embeddings into an image.
+        """Decodes quantized embeddings into an image.
 
         Args:
             quant: Quantized embeddings.
@@ -100,8 +95,7 @@ class DualGrainVQModel(Stage1Model):
     def forward(
         self, input: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Forward pass of the model.
+        """Forward pass of the model.
 
         Args:
             input: Input image tensor.

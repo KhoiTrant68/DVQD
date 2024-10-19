@@ -8,9 +8,7 @@ from src.utils.util_modules import disabled_train, instantiate_from_config
 
 
 class TripleGrainVQModel(Stage1Model):
-    """
-    Triple Grain VQ Model with Entropy Module for image generation.
-    """
+    """Triple Grain VQ Model with Entropy Module for image generation."""
 
     def __init__(
         self,
@@ -27,8 +25,7 @@ class TripleGrainVQModel(Stage1Model):
         entropy_patch_size: int = 32,
         image_size: int = 256,
     ):
-        """
-        Initializes the TripleGrainVQModel.
+        """Initializes the TripleGrainVQModel.
 
         Args:
             encoderconfig: Configuration for the encoder.
@@ -70,8 +67,7 @@ class TripleGrainVQModel(Stage1Model):
     ) -> Tuple[
         torch.Tensor, torch.Tensor, dict, torch.Tensor, torch.Tensor, torch.Tensor
     ]:
-        """
-        Encodes an input image into quantized embeddings.
+        """Encodes an input image into quantized embeddings.
 
         Args:
             x: Input image tensor.
@@ -99,8 +95,7 @@ class TripleGrainVQModel(Stage1Model):
         return quant, emb_loss, info, grain_indices, gate, x_entropy
 
     def decode(self, quant: torch.Tensor) -> torch.Tensor:
-        """
-        Decodes quantized embeddings into an image.
+        """Decodes quantized embeddings into an image.
 
         Args:
             quant: Quantized embeddings.
@@ -115,8 +110,7 @@ class TripleGrainVQModel(Stage1Model):
     def forward(
         self, input: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Forward pass of the model.
+        """Forward pass of the model.
 
         Args:
             input: Input image tensor.

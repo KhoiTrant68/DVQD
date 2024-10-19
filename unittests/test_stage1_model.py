@@ -1,5 +1,3 @@
-import sys
-
 import torch
 import yaml
 from omegaconf import OmegaConf

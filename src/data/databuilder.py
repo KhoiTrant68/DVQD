@@ -4,7 +4,7 @@ from src.utils.util_modules import instantiate_from_config
 
 
 class DataModuleFromConfig:
-    """Module to configure data loading from various dataset splits and options."""
+    """Module to configure data loading from various dataset splits options."""
 
     def __init__(
         self,
@@ -16,8 +16,7 @@ class DataModuleFromConfig:
         num_workers=None,
         train_val=False,
     ):
-        """
-        Initialize the DataModuleFromConfig.
+        """Initialize the DataModuleFromConfig.
 
         Args:
             batch_size (int): The number of samples per batch to load.
@@ -43,8 +42,7 @@ class DataModuleFromConfig:
         self.datasets = self.setup_datasets()
 
     def setup_datasets(self):
-        """
-        Set up datasets based on the provided configurations.
+        """Set up datasets based on the provided configurations.
 
         Returns:
             dict: A dictionary containing instantiated datasets for each split.
@@ -59,8 +57,7 @@ class DataModuleFromConfig:
         return datasets
 
     def get_dataloader(self, split):
-        """
-        Get a DataLoader for a specific dataset split.
+        """Get a DataLoader for a specific dataset split.
 
         Args:
             split (str): The dataset split to load ('train', 'val', or 'test').

@@ -7,7 +7,8 @@ from torch.nn import functional as F
 
 
 class VQEmbedding(nn.Embedding):
-    """Vector Quantization (VQ) embedding module with Exponential Moving Average (EMA) update."""
+    """Vector Quantization (VQ) embedding module with Exponential Moving
+    Average (EMA) update."""
 
     def __init__(
         self,
@@ -79,7 +80,8 @@ class VQEmbedding(nn.Embedding):
 
     @torch.no_grad()
     def _tile_with_noise(self, x, target_n):
-        """Tile the input tensor with noise to reach a target number of vectors.
+        """Tile the input tensor with noise to reach a target number of
+        vectors.
 
         Args:
             x (torch.Tensor): Input tensor of shape [B, embed_dim].

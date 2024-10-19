@@ -17,8 +17,7 @@ transform_to_pil = transforms.ToPILImage()
 
 
 def image_normalize(tensor, value_range=None, scale_each=False):
-    """
-    Normalizes a tensor to a given value range.
+    """Normalizes a tensor to a given value range.
 
     Args:
         tensor (torch.Tensor): The input tensor.
@@ -48,8 +47,7 @@ def image_normalize(tensor, value_range=None, scale_each=False):
 
 
 def _draw_grain_base(indices, low_color, high_color, scaler=0.1):
-    """
-    Base function to draw grain images based on indices.
+    """Base function to draw grain images based on indices.
 
     Args:
         indices (torch.Tensor): Indices tensor with shape (B, H, W).
@@ -84,8 +82,7 @@ def _draw_grain_base(indices, low_color, high_color, scaler=0.1):
 def draw_dual_grain_256res_color(
     images=None, indices=None, low_color="blue", high_color="red", scaler=0.1
 ):
-    """
-    Draw dual-grain images based on indices.
+    """Draw dual-grain images based on indices.
 
     Args:
         images (torch.Tensor, optional): Base images tensor. Defaults to None.
@@ -127,8 +124,7 @@ def draw_triple_grain_256res_color(
     high_color="red",
     scaler=0.1,
 ):
-    """
-    Draw triple-grain images based on indices.
+    """Draw triple-grain images based on indices.
 
     Args:
         images (torch.Tensor, optional): Base images tensor. Defaults to None.

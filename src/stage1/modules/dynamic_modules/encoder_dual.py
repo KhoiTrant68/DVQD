@@ -7,9 +7,7 @@ from src.utils.util_modules import instantiate_from_config
 
 
 class DualGrainEncoder(nn.Module):
-    """
-    Dual Grain Encoder for image processing.
-    """
+    """Dual Grain Encoder for image processing."""
 
     def __init__(
         self,
@@ -27,8 +25,8 @@ class DualGrainEncoder(nn.Module):
         update_router=True,
         **ignore_kwargs,
     ):
-        """
-        Initializes the DualGrainEncoder.
+        """Initializes the DualGrainEncoder.
+
         Args:
             ch (int): Base number of channels.
             ch_mult (tuple): Multipliers for the number of channels at each resolution level.
@@ -125,8 +123,7 @@ class DualGrainEncoder(nn.Module):
         self.update_router = update_router
 
     def forward(self, x, x_entropy):
-        """
-        Forward pass of the encoder.
+        """Forward pass of the encoder.
 
         Args:
             x (torch.Tensor): Input tensor to the encoder.
@@ -145,8 +142,7 @@ class DualGrainEncoder(nn.Module):
         return self._dynamic_routing(h_coarse, h_fine, x_entropy)
 
     def _downsample(self, x):
-        """
-        Downsamples the input tensor through multiple resolution levels.
+        """Downsamples the input tensor through multiple resolution levels.
 
         Args:
             x (torch.Tensor): Input tensor to be downsampled.
@@ -169,8 +165,7 @@ class DualGrainEncoder(nn.Module):
         return hs, h_fine
 
     def _process_coarse(self, h):
-        """
-        Processes the coarse grain features.
+        """Processes the coarse grain features.
 
         Args:
             h (torch.Tensor): Coarse grain features.
@@ -184,8 +179,7 @@ class DualGrainEncoder(nn.Module):
         return self.conv_out_coarse(h)
 
     def _process_fine(self, h):
-        """
-        Processes the fine grain features.
+        """Processes the fine grain features.
 
         Args:
             h (torch.Tensor): Fine grain features.
@@ -199,8 +193,7 @@ class DualGrainEncoder(nn.Module):
         return self.conv_out_fine(h)
 
     def _dynamic_routing(self, h_coarse, h_fine, x_entropy):
-        """
-        Performs dynamic routing between coarse and fine grain features.
+        """Performs dynamic routing between coarse and fine grain features.
 
         Args:
             h_coarse (torch.Tensor): Coarse grain features.

@@ -12,8 +12,7 @@ sys.path.append("../..")
 class BaseDataset(Dataset):
 
     def __init__(self, split, paths, size=None, random_crop=False, labels=None):
-        """
-        Initialize the BaseDataset.
+        """Initialize the BaseDataset.
 
         Args:
             split (str): The dataset split, either 'train' or 'val'.
@@ -54,8 +53,7 @@ class BaseDataset(Dataset):
         return len(self.paths)
 
     def preprocess_image(self, image_path):
-        """
-        Preprocess an image by applying transformations.
+        """Preprocess an image by applying transformations.
 
         Args:
             image_path (str): The file path of the image to preprocess.
@@ -77,8 +75,7 @@ class ImageNetDataset(BaseDataset):
     """ImageNet dataset class using BaseDataset."""
 
     def __init__(self, split: str, data_dir=None, size=256, random_crop=False):
-        """
-        Initialize the ImageNetDataset.
+        """Initialize the ImageNetDataset.
 
         Args:
             split (str): The dataset split, either 'train' or 'val'.

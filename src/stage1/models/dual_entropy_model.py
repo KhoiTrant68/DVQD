@@ -8,9 +8,7 @@ from src.utils.util_modules import disabled_train, instantiate_from_config
 
 
 class DualGrainVQModel(Stage1Model):
-    """
-    Dual Grain VQ Model for image generation.
-    """
+    """Dual Grain VQ Model for image generation."""
 
     def __init__(
         self,
@@ -28,8 +26,7 @@ class DualGrainVQModel(Stage1Model):
         image_size: int = 256,
         **ignore_kwargs,
     ):
-        """
-        Initialize the DualGrainVQModel.
+        """Initialize the DualGrainVQModel.
 
         This method sets up the encoder, decoder, quantization, and entropy calculation
         components of the model, and optionally loads weights from a checkpoint.
@@ -74,8 +71,7 @@ class DualGrainVQModel(Stage1Model):
     ) -> Tuple[
         torch.Tensor, torch.Tensor, dict, torch.Tensor, torch.Tensor, torch.Tensor
     ]:
-        """
-        Encodes an input image into quantized embeddings.
+        """Encodes an input image into quantized embeddings.
 
         Args:
             x (torch.Tensor): Input image tensor.
@@ -103,8 +99,7 @@ class DualGrainVQModel(Stage1Model):
         return quant, emb_loss, info, grain_indices, gate, x_entropy
 
     def decode(self, quant: torch.Tensor) -> torch.Tensor:
-        """
-        Decodes quantized embeddings into an image.
+        """Decodes quantized embeddings into an image.
 
         Args:
             quant (torch.Tensor): Quantized embeddings.
@@ -119,8 +114,7 @@ class DualGrainVQModel(Stage1Model):
     def forward(
         self, input: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Forward pass of the model.
+        """Forward pass of the model.
 
         Args:
             input (torch.Tensor): Input image tensor.
