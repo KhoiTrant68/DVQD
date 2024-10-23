@@ -211,7 +211,6 @@ class DualGrainEncoder(nn.Module):
             dict: A dictionary containing the dual grain output, indices, codebook mask, and gate values.
         """
         gate = self.router(h_fine=h_fine, h_coarse=h_coarse, entropy=x_entropy)
-        print("gate", gate.shape)
         if self.update_router:
             gate = F.gumbel_softmax(gate, dim=-1, hard=True)
 
