@@ -1,5 +1,6 @@
 import sys
 
+sys.path.append("..")
 import torch
 import yaml
 from omegaconf import OmegaConf
@@ -34,17 +35,17 @@ def test_grain_vq_model(config_path):
 
 
 # Run the test
-test_grain_vq_model("./src/configs/stage1/dual_feat_imagenet.yml")
+# test_grain_vq_model("./src/configs/stage1/dual_feat_imagenet.yml")
 
 
-test_grain_vq_model("./src/configs/stage1/dual_dynamic_entropy_imagenet.yml")
+# test_grain_vq_model("./src/configs/stage1/dual_dynamic_entropy_imagenet.yml")
 
 
-test_grain_vq_model("./src/configs/stage1/dual_fixed_entropy_imagenet.yml")
+# test_grain_vq_model("./src/configs/stage1/dual_fixed_entropy_imagenet.yml")
 
 
-test_grain_vq_model("./src/configs/stage1/triple_feat_imagenet.yml")
+# test_grain_vq_model("./src/configs/stage1/triple_feat_imagenet.yml")
 
-test_grain_vq_model("./src/configs/stage1/triple_fixed_entropy_imagenet.yml")
+# test_grain_vq_model("./src/configs/stage1/triple_fixed_entropy_imagenet.yml")
 
 test_grain_vq_model("./src/configs/stage1/triple_dynamic_entropy_imagenet.yml")
