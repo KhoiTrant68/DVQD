@@ -18,9 +18,11 @@ class BaseSOSProvider(AbstractEncoder):
         self.fine_seg_sos = fine_seg_sos
 
     def _get_sos_tensors(self, value, batch_size, device):
-        if value is not None:
-            return torch.ones(batch_size, 1, dtype=torch.long, device=device) * value
-        return None
+        return (
+            torch.full((batch_size, 1), value, dtype=torch.long, device=device)
+            if value is not None
+            else None
+        )
 
     def forward(self, x):
         batch_size = x.size(0)
@@ -77,6 +79,8 @@ class ClassBasedSOSProvider(BaseSOSProvider):
         device = x.device
         c_coarse = (x[:, None] + self.threshold_content).long().to(device)
         c_fine = c_coarse if self.fine_seg_sos is not None else None
+        c_seg_coarse = self._get_sos_tensors(self.coarse_seg_sos, x.size(0), device)
+        c_seg_fine = self._get_sos_tensors(self.fine_seg_sos, x.size(0), device)
 
         if isinstance(self.coarse_pos_sos, int):
             c_pos_coarse = (x[:, None] + self.coarse_pos_sos).long().to(device)
@@ -86,8 +90,6 @@ class ClassBasedSOSProvider(BaseSOSProvider):
                 else None
             )
         else:
-            c_pos_coarse, c_pos_fine, c_seg_coarse, c_seg_fine = super().encode(x)[
-                2:
-            ]  # Reuse logic if using SOS tokens
+            c_pos_coarse, c_pos_fine, c_seg_coarse, c_seg_fine = super().forward(x)[2:]
 
         return c_coarse, c_fine, c_pos_coarse, c_pos_fine, c_seg_coarse, c_seg_fine

@@ -16,8 +16,20 @@ base_sos_provider = PositionAwareSOSProvider(
     fine_seg_sos=1,
 )
 
-dummy_input = torch.rand(1, 3, 256, 256)
 
-out = base_sos_provider(dummy_input)
+class_sos_provider = ClassBasedSOSProvider(
+    threshold_content=1026,
+    threshold_coarse_position=258,
+    threshold_fine_position=1026,
+    coarse_seg_sos=0,
+    fine_seg_sos=1,
+)
+dummy_input_1 = torch.rand(4, 3, 256, 256)
+dummy_input_2 = torch.Tensor([443, 443, 443, 443])
 
-print(out)
+out_1 = base_sos_provider(dummy_input_1)
+out_2 = class_sos_provider(dummy_input_2)
+print(out_1)
+print("================================================")
+
+print(out_2)
