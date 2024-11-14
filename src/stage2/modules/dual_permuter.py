@@ -7,9 +7,11 @@ from torch.nn.utils.rnn import pad_sequence
 class DualGrainSeparatePermuter(nn.Module):
     """A dual-grain permutation module that handles both coarse and fine-grained positions.
 
-    This module processes input indices at two granularity levels:
-    - Coarse grain: One code per region
-    - Fine grain: Multiple codes per region
+    This module implements a hierarchical permutation strategy with two granularity levels:
+    - Coarse grain: Handles larger spatial regions
+    - Fine grain: Handles detailed positions within each region
+
+    The module can process images in either "region-first" or "row-first" order.
 
     Args:
         coarse_size (int): Height/width size for coarse grain (default: 16)
@@ -96,7 +98,16 @@ class DualGrainSeparatePermuter(nn.Module):
     def _process_content_and_position(
         self, indices, grain_indices, original_indices=None
     ):
-        """Process content and position sequences for both grains."""
+        """Process content and position sequences for both grains.
+
+        Args:
+            indices: Input tensor processed for grain handling
+            grain_indices: Binary tensor indicating grain type
+            original_indices: Original input tensor (used for row-first order)
+
+        Returns:
+            dict: Processed tensors for both coarse and fine grains
+        """
         batch_size = len(indices)
 
         # Process coarse grain
@@ -175,7 +186,17 @@ class DualGrainSeparatePermuter(nn.Module):
         fine_content_list,
         fine_position_list,
     ):
-        """Pad sequences and create segment tensors."""
+        """Pad sequences and create segment tensors.
+
+        Args:
+            coarse_content_list: List of coarse content tensors
+            coarse_position_list: List of coarse position tensors
+            fine_content_list: List of fine content tensors
+            fine_position_list: List of fine position tensors
+
+        Returns:
+            dict: Padded tensors and corresponding segment tensors
+        """
         coarse_content_tensor = pad_sequence(
             coarse_content_list, batch_first=True, padding_value=self.content_pad_code
         )
