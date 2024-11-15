@@ -6,10 +6,9 @@ sys.path.append("..")
 from src.stage2.modules.dual_permuter import DualGrainSeparatePermuter
 
 if __name__ == "__main__":
-    test_code = 1
+    test_code = 2
     position_order = "region-first"
     if test_code == 1:
-        # test code 1
         x1 = torch.randint(0, 1024, (2, 8, 8))  # .cuda()
         x2 = 4 * torch.ones_like(x1)  # .cuda()
 
@@ -19,9 +18,6 @@ if __name__ == "__main__":
         ).repeat_interleave(2, dim=-2)
 
         original_indices = x1 * grain_indices_repeat + x2 * (1 - grain_indices_repeat)
-        print("original_indices-------------", original_indices.shape)
-        print("grain_indices-------------", grain_indices.shape)
-        # print(grain_indices)
 
         permuter = DualGrainSeparatePermuter(
             coarse_size=4,
@@ -36,25 +32,18 @@ if __name__ == "__main__":
         )
 
         out = permuter(original_indices, grain_indices)
-        print("original_indices:", original_indices)
-        print("grain_indices:", grain_indices)
-
         coarse_content, fine_content, coarse_position, fine_position = (
             out["coarse_content"],
             out["fine_content"],
             out["coarse_position"],
             out["fine_position"],
         )
-        print("coarse_content", coarse_content.shape)
-        print("coarse_position", coarse_position.shape)
-        print("fine_content", fine_content.shape)
-        print("fine_position", fine_position.shape)
 
-        target_fine = permuter.forward_back(
+        target_fine = permuter.reverse(
             coarse_content, fine_content, coarse_position, fine_position
         )
-        print(target_fine)
         print(torch.all(target_fine == original_indices))
+
     elif test_code == 2:
         ## test code 2
         original_indices = torch.tensor(
@@ -2303,8 +2292,7 @@ if __name__ == "__main__":
             out["fine_position"],
         )
 
-        target_fine = permuter.forward_back(
+        target_fine = permuter.reverse(
             coarse_content, fine_content, coarse_position, fine_position
         )
-        print(target_fine)
         print(torch.all(target_fine == original_indices))

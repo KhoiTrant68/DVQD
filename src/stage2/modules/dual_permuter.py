@@ -1,28 +1,24 @@
 import torch
+import torch.nn as nn
 from einops import rearrange
-from torch import nn
 from torch.nn.utils.rnn import pad_sequence
 
 
 class DualGrainSeparatePermuter(nn.Module):
-    """A dual-grain permutation module that handles both coarse and fine-grained positions.
-
-    This module implements a hierarchical permutation strategy with two granularity levels:
-    - Coarse grain: Handles larger spatial regions
-    - Fine grain: Handles detailed positions within each region
-
-    The module can process images in either "region-first" or "row-first" order.
+    """
+    A module to represent all-grain positions using fine positions,
+    separating coarse and fine positions.
 
     Args:
-        coarse_size (int): Height/width size for coarse grain (default: 16)
-        fine_size (int): Height/width size for fine grain (default: 32)
-        content_pad_code (int): Padding code for content (default: 1024)
-        content_eos_code (int): End-of-sequence code for content (default: 1025)
-        coarse_position_pad_code (int): Padding code for coarse positions (default: 256)
-        coarse_position_eos_code (int): End-of-sequence code for coarse positions (default: 257)
-        fine_position_pad_code (int): Padding code for fine positions (default: 1024)
-        fine_position_eos_code (int): End-of-sequence code for fine positions (default: 1025)
-        position_order (str): Ordering strategy for fine positions ("region-first" or "row-first")
+        coarse_size (int): Size of the coarse grid. Default is 16.
+        fine_size (int): Size of the fine grid. Default is 32.
+        content_pad_code (int): Padding code for content. Default is 1024.
+        content_eos_code (int): End-of-sequence code for content. Default is 1025.
+        coarse_position_pad_code (int): Padding code for coarse positions. Default is 256.
+        coarse_position_eos_code (int): End-of-sequence code for coarse positions. Default is 257.
+        fine_position_pad_code (int): Padding code for fine positions. Default is 1024.
+        fine_position_eos_code (int): End-of-sequence code for fine positions. Default is 1025.
+        position_order (str): Order of positions, either "row-first" or "region-first". Default is "region-first".
     """
 
     def __init__(
@@ -36,189 +32,184 @@ class DualGrainSeparatePermuter(nn.Module):
         fine_position_pad_code=1024,
         fine_position_eos_code=1025,
         position_order="region-first",
-    ):
-        super().__init__()
+    ) -> None:
+        super(DualGrainSeparatePermuter, self).__init__()
 
-        # Validate inputs
-        if fine_size % coarse_size != 0:
-            raise ValueError("fine_size must be divisible by coarse_size")
-        if position_order not in ["region-first", "row-first"]:
-            raise ValueError("position_order must be 'region-first' or 'row-first'")
-
-        # Initialize dimensions
-        self.coarse_size = coarse_size
+        self.hw1 = coarse_size
+        self.hw2 = fine_size // coarse_size
         self.fine_size = fine_size
-        self.ratio_coarse_fine = fine_size // coarse_size
-        self.ratio_coarse_fine_square = self.ratio_coarse_fine * self.ratio_coarse_fine
+        self.hw2_square = int(self.hw2 * self.hw2)
 
-        # Store codes as buffer tensors for efficiency
-        self.register_buffer(
-            "content_eos_tensor", torch.tensor([content_eos_code], dtype=torch.long)
-        )
-        self.register_buffer(
-            "coarse_position_eos_tensor",
-            torch.tensor([coarse_position_eos_code], dtype=torch.long),
-        )
-        self.register_buffer(
-            "fine_position_eos_tensor",
-            torch.tensor([fine_position_eos_code], dtype=torch.long),
-        )
-
-        # Store configuration
         self.content_pad_code = content_pad_code
         self.content_eos_code = content_eos_code
         self.coarse_position_pad_code = coarse_position_pad_code
         self.coarse_position_eos_code = coarse_position_eos_code
         self.fine_position_pad_code = fine_position_pad_code
         self.fine_position_eos_code = fine_position_eos_code
-        self.position_order = position_order
 
-        # Pre-compute position sequences
-        self._initialize_position_sequences()
-
-    def _initialize_position_sequences(self):
-        """Initialize position sequences for both coarse and fine grains."""
-        coarse_positions = torch.arange(self.coarse_size**2, dtype=torch.long)
-        self.register_buffer("position_sequence_coarse", coarse_positions)
-
-        fine_positions = torch.arange(self.fine_size**2, dtype=torch.long).view(
-            self.fine_size, self.fine_size
+        self.content_eos_tensor = torch.tensor(
+            [self.content_eos_code], dtype=torch.long
         )
-        if self.position_order == "region-first":
-            fine_positions = rearrange(
-                fine_positions,
-                "(h1 h2) (w1 w2) -> h1 w1 (h2 w2)",
-                h1=self.coarse_size,
-                h2=self.ratio_coarse_fine,
-                w1=self.coarse_size,
-                w2=self.ratio_coarse_fine,
-            )
-        self.register_buffer("position_sequence_fine", fine_positions)
+        self.coarse_position_eos_tensor = torch.tensor(
+            [self.coarse_position_eos_code], dtype=torch.long
+        )
+        self.fine_position_eos_tensor = torch.tensor(
+            [self.fine_position_eos_code], dtype=torch.long
+        )
 
-    def _process_content_and_position(
-        self, indices, grain_indices, original_indices=None
-    ):
-        """Process content and position sequences for both grains.
+        self.position_order = position_order
+        assert self.position_order in ["row-first", "region-first"]
+        self.position_sequence_coarse = torch.arange(
+            int(coarse_size**2), dtype=torch.long
+        )
+        self.position_sequence_fine = torch.arange(
+            int(fine_size**2), dtype=torch.long
+        ).view(fine_size, fine_size)
+        if self.position_order == "region-first":
+            self.position_sequence_fine = rearrange(
+                self.position_sequence_fine,
+                "(h1 h2) (w1 w2) -> h1 w1 (h2 w2)",
+                h1=self.hw1,
+                h2=self.hw2,
+                w1=self.hw1,
+                w2=self.hw2,
+            )
+
+    def forward(self, indices, grain_indices):
+        """
+        Forward pass for the DualGrainSeparatePermuter.
 
         Args:
-            indices: Input tensor processed for grain handling
-            grain_indices: Binary tensor indicating grain type
-            original_indices: Original input tensor (used for row-first order)
+            indices (torch.Tensor): Input indices tensor.
+            grain_indices (torch.Tensor): Grain indices tensor.
 
         Returns:
-            dict: Processed tensors for both coarse and fine grains
+            dict: A dictionary containing coarse and fine content, position, and segment tensors.
         """
-        batch_size = len(indices)
+        batch_size = indices.size(0)
+        device = indices.device
 
-        # Process coarse grain
+        original_indices = indices.clone()
+
+        indices = rearrange(
+            indices,
+            "B (h1 h2) (w1 w2) -> B h1 w1 (h2 w2)",
+            h1=self.hw1,
+            h2=self.hw2,
+            w1=self.hw1,
+            w2=self.hw2,
+        )
+
+        # Coarse-grain sequence
         coarse_content = indices[:, :, :, 0]
         coarse_content_list = [
             torch.cat(
-                [coarse_content[i][grain_indices[i] == 0], self.content_eos_tensor]
-            )
-            for i in range(batch_size)
-        ]
-
-        coarse_position_list = [
-            torch.cat(
                 [
-                    self.position_sequence_coarse[grain_indices[i].view(-1) == 0],
-                    self.coarse_position_eos_tensor,
+                    coarse_content[i][(grain_indices[i] == 0)].to(device),
+                    self.content_eos_tensor.to(device),
                 ]
             )
             for i in range(batch_size)
         ]
+        coarse_content_tensor = pad_sequence(
+            coarse_content_list, batch_first=True, padding_value=self.content_pad_code
+        )
 
-        # Process fine grain
+        coarse_position_list = [
+            torch.cat(
+                [
+                    self.position_sequence_coarse[
+                        grain_indices[i].view(-1).cpu() == 0
+                    ].to(device),
+                    self.coarse_position_eos_tensor.to(device),
+                ]
+            )
+            for i in range(batch_size)
+        ]
+        coarse_position_tensor = pad_sequence(
+            coarse_position_list,
+            batch_first=True,
+            padding_value=self.coarse_position_pad_code,
+        )
+
+        coarse_segment_tensor = (
+            torch.zeros_like(coarse_content_tensor).to(device).long()
+        )
+
+        # Fine-grain sequence
         if self.position_order == "region-first":
             fine_content_list = [
                 torch.cat(
                     [
-                        indices[i][grain_indices[i] == 1].view(-1),
-                        self.content_eos_tensor,
+                        indices[i][grain_indices[i] == 1].to(device).view(-1),
+                        self.content_eos_tensor.to(device),
                     ]
                 )
                 for i in range(batch_size)
             ]
+            fine_content_tensor = pad_sequence(
+                fine_content_list, batch_first=True, padding_value=self.content_pad_code
+            )
+
             fine_position_list = [
                 torch.cat(
                     [
-                        self.position_sequence_fine[grain_indices[i] == 1].view(-1),
-                        self.fine_position_eos_tensor,
+                        self.position_sequence_fine[grain_indices[i] == 1]
+                        .view(-1)
+                        .to(device),
+                        self.fine_position_eos_tensor.to(device),
                     ]
                 )
                 for i in range(batch_size)
             ]
-        else:  # row-first
+            fine_position_tensor = pad_sequence(
+                fine_position_list,
+                batch_first=True,
+                padding_value=self.fine_position_pad_code,
+            )
+        elif self.position_order == "row-first":
             fine_grain_indices = grain_indices.repeat_interleave(
                 2, dim=-1
             ).repeat_interleave(2, dim=-2)
             fine_content_list = [
                 torch.cat(
                     [
-                        original_indices[i][fine_grain_indices[i] == 1].view(-1),
-                        self.content_eos_tensor,
+                        original_indices[i][fine_grain_indices[i] == 1]
+                        .view(-1)
+                        .to(device),
+                        self.content_eos_tensor.to(device),
                     ]
                 )
                 for i in range(batch_size)
             ]
+            fine_content_tensor = pad_sequence(
+                fine_content_list, batch_first=True, padding_value=self.content_pad_code
+            )
+
             fine_position_list = [
                 torch.cat(
                     [
-                        self.position_sequence_fine[fine_grain_indices[i] == 1],
-                        self.fine_position_eos_tensor,
+                        self.position_sequence_fine[
+                            fine_grain_indices[i].cpu() == 1
+                        ].to(device),
+                        self.fine_position_eos_tensor.to(device),
                     ]
                 )
                 for i in range(batch_size)
             ]
+            fine_position_tensor = pad_sequence(
+                fine_position_list,
+                batch_first=True,
+                padding_value=self.fine_position_pad_code,
+            )
+        else:
+            raise NotImplementedError(
+                "{} is not supported yet!".format(self.position_order)
+            )
 
-        return self._pad_sequences(
-            coarse_content_list,
-            coarse_position_list,
-            fine_content_list,
-            fine_position_list,
-        )
+        fine_segment_tensor = torch.ones_like(fine_content_tensor).to(device).long()
 
-    def _pad_sequences(
-        self,
-        coarse_content_list,
-        coarse_position_list,
-        fine_content_list,
-        fine_position_list,
-    ):
-        """Pad sequences and create segment tensors.
-
-        Args:
-            coarse_content_list: List of coarse content tensors
-            coarse_position_list: List of coarse position tensors
-            fine_content_list: List of fine content tensors
-            fine_position_list: List of fine position tensors
-
-        Returns:
-            dict: Padded tensors and corresponding segment tensors
-        """
-        coarse_content_tensor = pad_sequence(
-            coarse_content_list, batch_first=True, padding_value=self.content_pad_code
-        )
-        coarse_position_tensor = pad_sequence(
-            coarse_position_list,
-            batch_first=True,
-            padding_value=self.coarse_position_pad_code,
-        )
-        fine_content_tensor = pad_sequence(
-            fine_content_list, batch_first=True, padding_value=self.content_pad_code
-        )
-        fine_position_tensor = pad_sequence(
-            fine_position_list,
-            batch_first=True,
-            padding_value=self.fine_position_pad_code,
-        )
-
-        # Create segment tensors
-        coarse_segment_tensor = torch.zeros_like(coarse_content_tensor)
-        fine_segment_tensor = torch.ones_like(fine_content_tensor)
-
-        return {
+        return_dict = {
             "coarse_content": coarse_content_tensor,
             "fine_content": fine_content_tensor,
             "coarse_position": coarse_position_tensor,
@@ -226,90 +217,67 @@ class DualGrainSeparatePermuter(nn.Module):
             "coarse_segment": coarse_segment_tensor,
             "fine_segment": fine_segment_tensor,
         }
+        return return_dict
 
-    def forward(self, indices, grain_indices):
-        """Forward pass for the permuter.
+    def reverse(self, coarse_content, fine_content, coarse_position, fine_position):
+        """
+        Reverse operation for the DualGrainSeparatePermuter.
 
         Args:
-            indices: Input tensor of shape [B, H, W]
-            grain_indices: Binary tensor indicating grain type (0=coarse, 1=fine)
+            coarse_content (torch.Tensor): Coarse content tensor.
+            fine_content (torch.Tensor): Fine content tensor.
+            coarse_position (torch.Tensor): Coarse position tensor.
+            fine_position (torch.Tensor): Fine position tensor.
 
         Returns:
-            dict: Contains processed tensors for both coarse and fine grains
+            torch.Tensor: The reconstructed target indices tensor.
         """
-        original_indices = indices.clone()
-        indices = rearrange(
-            indices,
-            "B (h1 h2) (w1 w2) -> B h1 w1 (h2 w2)",
-            h1=self.coarse_size,
-            h2=self.ratio_coarse_fine,
-            w1=self.coarse_size,
-            w2=self.ratio_coarse_fine,
-        )
-
-        return self._process_content_and_position(
-            indices, grain_indices, original_indices
-        )
-
-    def forward_back(
-        self, coarse_content, fine_content, coarse_position, fine_position
-    ):
-        """Reverse the permutation process.
-
-        Args:
-            coarse_content: Tensor of coarse grain content
-            fine_content: Tensor of fine grain content
-            coarse_position: Tensor of coarse grain positions
-            fine_position: Tensor of fine grain positions
-
-        Returns:
-            torch.Tensor: Reconstructed indices tensor
-        """
-        batch_size = len(coarse_content)
+        batch_size, coarse_length = coarse_content.size()
         device = coarse_content.device
+        fine_length = fine_content.size(1)
 
         target_coarse_idx = torch.zeros(
-            batch_size, self.coarse_size**2, device=device, dtype=torch.long
-        )
+            batch_size, int(self.hw1) ** 2, dtype=torch.long
+        ).to(device)
         target_idx = torch.zeros(
-            batch_size, self.fine_size**2, device=device, dtype=torch.long
-        )
+            batch_size, int(self.fine_size) ** 2, dtype=torch.long
+        ).to(device)
 
         for i in range(batch_size):
-            # Process coarse positions
-            coarse_end = (coarse_position[i] == self.coarse_position_eos_code).nonzero(
-                as_tuple=True
-            )[0]
-            if len(coarse_end) > 0:
-                coarse_end = coarse_end[0]
-                for pos in range(coarse_end):
-                    target_coarse_idx[i, coarse_position[i, pos]] = coarse_content[
-                        i, pos
+            for current_position in range(coarse_length):
+                if (
+                    coarse_position[i, current_position]
+                    == self.coarse_position_eos_code
+                ):
+                    target_idx[i] = target_coarse_idx[i].repeat_interleave(4, dim=-1)
+                    target_idx[i] = rearrange(
+                        target_idx[i],
+                        "(h1 w1 h2 w2) -> (h1 h2 w1 w2)",
+                        h1=self.hw1,
+                        h2=self.hw2,
+                        w1=self.hw1,
+                        w2=self.hw2,
+                    )
+                    break
+                else:
+                    target_coarse_idx[i, coarse_position[i, current_position]] = (
+                        coarse_content[i, current_position]
+                    )
+
+            for current_position in range(fine_length):
+                if fine_position[i, current_position] == self.fine_position_eos_code:
+                    break
+                else:
+                    target_idx[i, fine_position[i, current_position]] = fine_content[
+                        i, current_position
                     ]
-                target_idx[i] = target_coarse_idx[i].repeat_interleave(4)
-                target_idx[i] = rearrange(
-                    target_idx[i],
-                    "(h1 w1 h2 w2) -> (h1 h2 w1 w2)",
-                    h1=self.coarse_size,
-                    h2=self.ratio_coarse_fine,
-                    w1=self.coarse_size,
-                    w2=self.ratio_coarse_fine,
-                )
 
-            # Process fine positions
-            fine_end = (fine_position[i] == self.fine_position_eos_code).nonzero(
-                as_tuple=True
-            )[0]
-            if len(fine_end) > 0:
-                fine_end = fine_end[0]
-                for pos in range(fine_end):
-                    target_idx[i, fine_position[i, pos]] = fine_content[i, pos]
-
-        return rearrange(
+        target_idx = rearrange(
             target_idx,
             "B (h1 h2 w1 w2) -> B (h1 h2) (w1 w2)",
-            h1=self.coarse_size,
-            h2=self.ratio_coarse_fine,
-            w1=self.coarse_size,
-            w2=self.ratio_coarse_fine,
+            h1=self.hw1,
+            h2=self.hw2,
+            w1=self.hw1,
+            w2=self.hw2,
         )
+        return target_idx
