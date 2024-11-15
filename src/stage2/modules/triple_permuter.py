@@ -104,7 +104,7 @@ class TripleGrainSeparatePermuter(nn.Module):
         coarse_content = indices[:, :, :, 0]
         coarse_content_list = [
             torch.cat(
-                [coarse_content[i][grain_indices[i] == 0], self.content_eos_tensor]
+                [coarse_content[i][grain_indices[i] == 0].view(-1), self.content_eos_tensor]  # Ensure correct shape
             )
             for i in range(batch_size)
         ]
@@ -260,18 +260,32 @@ class TripleGrainSeparatePermuter(nn.Module):
 
     def forward(self, indices, grain_indices):
         original_indices = indices.clone()
+        
+        # Check the shape of indices before rearranging
+        print("Shape of indices before rearrangement:", indices.shape)
+        
+        # Ensure indices has the correct shape for three grains
+        expected_h1 = self.coarse_size
+        expected_h2 = self.medium_size // self.coarse_size
+        expected_h3 = self.fine_size // self.medium_size
+        
+        # Check if the shape of indices is as expected
+        if indices.shape[1] != expected_h1 * expected_h2 or indices.shape[2] != expected_h1 * expected_h3:
+            raise ValueError(f"Expected indices shape: [B, {expected_h1 * expected_h2}, {expected_h1 * expected_h3}], but got: {indices.shape}")
+        
+        # Adjust the rearrangement pattern for three grains
         indices = rearrange(
             indices,
-            "B (h1 h2) (w1 w2) -> B h1 w1 (h2 w2)",
-            h1=self.coarse_size,
-            h2=self.ratio_coarse_fine,
-            w1=self.coarse_size,
-            w2=self.ratio_coarse_fine,
+            "B (h1 h2) (w1 w2) -> B h1 h2 (w1 w2)",
+            h1=expected_h1,
+            h2=expected_h2,  # Adjusted for medium grain
+            w1=expected_h1,
+            w2=expected_h3,  # Adjusted for fine grain
         )
+        
         return self._process_content_and_position(
             indices, grain_indices, original_indices
         )
-
     def forward_back(
         self,
         coarse_content,

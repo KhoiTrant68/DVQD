@@ -275,7 +275,6 @@ def training_function(config: Dict, args: argparse.Namespace):
                         batch_idx,
                         split="train",
                         mode=args.mode,
-                        epoch=epoch,
                         step=overall_step,
                         accelerator=accelerator,
                     )
